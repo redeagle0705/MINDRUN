@@ -21,7 +21,7 @@ function wBase(){
     }catch(e){ print("mindrun migrate " + e); }
     return base;
 }
-var BASE = wBase(), VERSION = "mindustry-speedrun/0.13.14";
+var BASE = wBase(), VERSION = "mindustry-speedrun/0.13.15";
 var DIR = BASE + "/runtime", LOGS = BASE + "/logs/mindrun";
 // 0.9 (user 2026-11-03): a run fails when its time runs out. The user's own clears were normal 47.892 s and hard 96.214 s; about 15 s on top.
 var LIMIT = {normal: 120, hard: 165};   // normal 120 s, hard 165 s (user 2026-11-04, 45 stages)   // 0.13 (user 2026-11-04): for 45 stages until timed again; was normal 90 s, hard 125 s   // normal 90 s, hard 125 s (user 2026-11-04)   // 0.10: three more stages (repair, wall-place, flare), about +15 s normal and +20 s hard until the user measures again
@@ -1315,7 +1315,10 @@ function startRun(m, stage, hard){
                 }
                 tiles.getn(CORE_X, CY).setBlock(B.coreShard, Team.sharded);
             }));
-            Vars.state.map = new MapC(StringMap.of("name", "MINDRUN" + (mode == "hard" ? " 하드" : mode == "practice" ? " 연습" : "")));
+            // StringMap.of resolves to ObjectMap.of on Android, so fill the map by hand (0.13.15)
+            var mapTags = new StringMap();
+            mapTags.put("name", "MINDRUN" + (mode == "hard" ? " 하드" : mode == "practice" ? " 연습" : ""));
+            Vars.state.map = new MapC(mapTags);
             Vars.state.rules = rules;
             Vars.logic.play();
         }catch(e){ Vars.ui.showInfo("맵 만들기 실패: " + e); endRun("load_failed"); }
