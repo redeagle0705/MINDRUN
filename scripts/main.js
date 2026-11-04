@@ -8,6 +8,8 @@
 // Recorded in WORDLE/logs/mindrun/<stamp>/result.json; the best run in WORDLE/runtime/mindrun-best.json.
 // records live in Documents\My Games\Mindustry_RUN, the same on any PC (user 2026-11-04); before 0.9.10 they were in Desktop\WORDLE
 function wBase(){
+    // phones have no Documents folder we can write to: keep records in the game's own data folder (0.13.15)
+    try{ if(Packages.arc.util.OS.isAndroid || Packages.arc.util.OS.isIos) return String(Packages.arc.Core.settings.getDataDirectory().child("mindrun").absolutePath()); }catch(e){ print("mindrun base " + e); }
     var h = String(java.lang.System.getProperty("user.home")).replace(/\\/g, "/");
     var docs = [h + "/Documents", h + "/OneDrive/Documents", h + "/OneDrive/문서"], d = docs[0];
     for(var i = 0; i < docs.length; i++){ try{ if(Packages.arc.Core.files.absolute(docs[i]).exists()){ d = docs[i]; break; } }catch(e){} }
