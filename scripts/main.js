@@ -23,7 +23,7 @@ function wBase(){
     }catch(e){ print("mindrun migrate " + e); }
     return base;
 }
-var BASE = wBase(), VERSION = "mindustry-speedrun/0.13.21";
+var BASE = wBase(), VERSION = "mindustry-speedrun/0.13.22";
 var DIR = BASE + "/runtime", LOGS = BASE + "/logs/mindrun";
 // 0.9 (user 2026-11-03): a run fails when its time runs out. The user's own clears were normal 47.892 s and hard 96.214 s; about 15 s on top.
 var LIMIT = {normal: 120, hard: 165};   // normal 120 s, hard 165 s (user 2026-11-04, 45 stages)   // 0.13 (user 2026-11-04): for 45 stages until timed again; was normal 90 s, hard 125 s   // normal 90 s, hard 125 s (user 2026-11-04)   // 0.10: three more stages (repair, wall-place, flare), about +15 s normal and +20 s hard until the user measures again
@@ -190,6 +190,14 @@ function erekirPlan(c, r, hardTitle){
     c.wp = [ri(r, 10, 13), ri(r, 3, H - 6)]; c.lx = ri(r, 22, 26); c.gy = 1 + 2*ri(r, 1, Math.floor((H - 7)/2));   // odd, so the large walls line up
     c.keep = [[c.wp[0] - 1, c.wp[1] - 1, c.wp[0] + 2, c.wp[1] + 2], [c.lx - 2, 1, c.lx + 3, H - 2]];
     if(c.hard) c.title = hardTitle;
+}
+// water puddle on the tile or one of its eight neighbours
+function wetNear(x, y){
+    var Pd = Packages.mindustry.entities.Puddles, water = Packages.mindustry.content.Liquids.water;
+    for(var dx = -1; dx <= 1; dx++) for(var dy = -1; dy <= 1; dy++){
+        try{ var t = T(x + dx, y + dy); if(t == null) continue; var p = Pd.get(t); if(p != null && p.liquid == water && Number(p.amount) > 0) return true; }catch(e){ logErr("wetNear " + e); }
+    }
+    return false;
 }
 function erekirPlace(c, r, hp){
     for(var x = c.lx - 2; x <= c.lx + 3; x++) for(var y = 1; y <= H - 2; y++) clearDecor(x, y);
@@ -895,7 +903,8 @@ var MISSIONS = [
         c.fires.forEach(f => { var k = f[0] + "," + f[1]; if(c.doused[k]){ n++; return; }
             var tile = T(f[0], f[1]), fr = Fs.get(tile); if(fr == null){ Fs.create(tile); c.ft[k] = null; return; }
             var t = Number(fr.time), was = c.ft[k];
-            if(canDouse && was != null && t - was > 12*Packages.arc.util.Time.delta){ fr.remove(); c.doused[k] = true; n++; return; }   // doused
+            // 0.13.22: the jump alone still cleared fires nobody hit (user 2026-11-05): water must lie on or next to the fire too (a Tsunami shot leaves a puddle)
+            if(canDouse && was != null && t - was > 12*Packages.arc.util.Time.delta && wetNear(f[0], f[1])){ fr.remove(); c.doused[k] = true; n++; return; }   // doused
             fr.time = 0; c.ft[k] = 0; });   // the field (Rhino reads fr.time as the number, user 2026-11-04)
         c.out = n; },
      check: c => c.out >= c.fires.length && teamBuilds(b => b.block == B.tsunami).length > 0},
@@ -1128,6 +1137,12 @@ var MISSIONS = [
      tick: c => {
         keepMount(c); noBuild();
         var u = Vars.player.unit(), t = T(c.wp[0], c.wp[1]), b = t == null ? null : t.build;
+        // 0.13.22: picking the wall up here slowed the Evoke and lost the wall (user 2026-11-05): it goes straight back, as damaged as it was
+        try{ if(u != null && u.payloads != null && u.payloads.size > 0){
+            var hp = 0.12; try{ var pb = u.payloads.first().build; if(pb != null) hp = Math.max(0.05, pb.health/pb.maxHealth); }catch(e){}
+            u.payloads.clear();
+            if(b == null){ T(c.wp[0], c.wp[1]).setBlock(c.wallBlock, Team.sharded); b = T(c.wp[0], c.wp[1]).build; if(b != null) b.health = b.maxHealth*hp; }
+        } }catch(e){ logErr("repair payload " + e); }
         if(u == null || b == null || b.block != c.wallBlock || !b.damaged()) return;
         // the repair beam at full tilt (user 2026-11-04): about half a second of beam on it
         var m = null; try{ m = u.mounts[0]; }catch(e){}
