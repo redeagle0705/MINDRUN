@@ -23,7 +23,7 @@ function wBase(){
     }catch(e){ print("mindrun migrate " + e); }
     return base;
 }
-var BASE = wBase(), VERSION = "mindustry-speedrun/0.13.16";
+var BASE = wBase(), VERSION = "mindustry-speedrun/0.13.17";
 var DIR = BASE + "/runtime", LOGS = BASE + "/logs/mindrun";
 // 0.9 (user 2026-11-03): a run fails when its time runs out. The user's own clears were normal 47.892 s and hard 96.214 s; about 15 s on top.
 var LIMIT = {normal: 120, hard: 165};   // normal 120 s, hard 165 s (user 2026-11-04, 45 stages)   // 0.13 (user 2026-11-04): for 45 stages until timed again; was normal 90 s, hard 125 s   // normal 90 s, hard 125 s (user 2026-11-04)   // 0.10: three more stages (repair, wall-place, flare), about +15 s normal and +20 s hard until the user measures again
@@ -1466,14 +1466,19 @@ function playerName(){
 function sheetSign(d){ var s = d.name + "|" + d.mode + "|" + fixed(d.total, 3) + "|" + d.course + "|" + SHEET_SALT, h = 5381;
     for(var i = 0; i < s.length; i++) h = ((h*33) ^ s.charCodeAt(i)) >>> 0; return h.toString(16); }
 function sheetGet(params, done){
-    if(SHEET_URL == ""){ done(null, "랭킹 주소가 아직 설정되지 않았어요"); return; }
-    var q = Object.keys(params).map(k => k + "=" + java.net.URLEncoder.encode(String(params[k]), "UTF-8")).join("&");
-    var post = f => Packages.arc.Core.app.post(run(f));
+    // every callback is guarded: an exception on the main thread here crashed the whole game when loading failed (user 2026-11-05)
+    var safe = (o, err) => { try{ done(o, err); }catch(x){ logErr("ranking callback " + x); } };
+    if(SHEET_URL == ""){ safe(null, "랭킹 주소가 아직 설정되지 않았어요"); return; }
+    var post = f => { try{ Packages.arc.Core.app.post(run(() => { try{ f(); }catch(x){ logErr("ranking post " + x); } })); }catch(x){ logErr("ranking post " + x); } };
     try{
+        var q = Object.keys(params).map(k => k + "=" + java.net.URLEncoder.encode(String(params[k]), "UTF-8")).join("&");
         Packages.arc.util.Http.get(SHEET_URL + "?" + q)
-            .error(cons(e => post(() => done(null, String(e)))))
-            .submit(res => { var txt = String(res.getResultAsString()); post(() => { var o = null; try{ o = JSON.parse(txt); }catch(x){} if(o == null) done(null, "응답을 읽지 못했어요"); else done(o, null); }); });
-    }catch(e){ done(null, String(e)); }
+            .timeout(15000)
+            .error(cons(e => { var m = "error"; try{ m = String(e); }catch(x){} post(() => safe(null, m)); }))
+            .submit(res => { var txt = null; try{ txt = String(res.getResultAsString()); }catch(x){} post(() => {
+                var o = null; try{ o = JSON.parse(txt); }catch(x){}
+                if(o == null || typeof o != "object") safe(null, "응답을 읽지 못했어요"); else safe(o, null); }); });
+    }catch(e){ safe(null, String(e)); }
 }
 // a short reason instead of the whole exception and URL (it ran off the screen, user 2026-11-04)
 function shortErr(e){ e = String(e); var m = e.match(/HTTP\s*(\d{3})/i) || e.match(/\b(\d{3})\b/);
@@ -1500,7 +1505,7 @@ function rankingDialog(){
     d.addCloseButton(); d.show();
     ["normal", "hard"].forEach(md => sheetGet({action: "top", mode: md, course: courseId(), n: 10}, (o, err) => {
         var lbl = cols[md]; if(lbl == null) return;
-        if(err != null || !o.ok){ if(err != null) logErr("ranking top " + err); lbl.setText("불러오지 못했어요\n" + (err != null ? shortErr(err) : o.err)); return; }
+        if(err != null || !o.ok || o.top == null){ if(err != null) logErr("ranking top " + err); lbl.setText("불러오지 못했어요\n" + (err != null ? shortErr(err) : String(o.err || "빈 응답"))); return; }
         if(o.top.length == 0){ lbl.setText("아직 기록이 없어요"); return; }
         lbl.setText(o.top.map((r, i) => (r.name == me ? "[accent]" : "") + (i + 1) + ". " + r.name + "  " + fixed(Number(r.total), 3) + (r.name == me ? "[]" : "")).join("\n"));
     }));
