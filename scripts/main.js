@@ -23,7 +23,7 @@ function wBase(){
     }catch(e){ print("mindrun migrate " + e); }
     return base;
 }
-var BASE = wBase(), VERSION = "mindustry-speedrun/0.13.17";
+var BASE = wBase(), VERSION = "mindustry-speedrun/0.13.18";
 var DIR = BASE + "/runtime", LOGS = BASE + "/logs/mindrun";
 // 0.9 (user 2026-11-03): a run fails when its time runs out. The user's own clears were normal 47.892 s and hard 96.214 s; about 15 s on top.
 var LIMIT = {normal: 120, hard: 165};   // normal 120 s, hard 165 s (user 2026-11-04, 45 stages)   // 0.13 (user 2026-11-04): for 45 stages until timed again; was normal 90 s, hard 125 s   // normal 90 s, hard 125 s (user 2026-11-04)   // 0.10: three more stages (repair, wall-place, flare), about +15 s normal and +20 s hard until the user measures again
@@ -1470,21 +1470,30 @@ function sheetGet(params, done){
     var safe = (o, err) => { try{ done(o, err); }catch(x){ logErr("ranking callback " + x); } };
     if(SHEET_URL == ""){ safe(null, "랭킹 주소가 아직 설정되지 않았어요"); return; }
     var post = f => { try{ Packages.arc.Core.app.post(run(() => { try{ f(); }catch(x){ logErr("ranking post " + x); } })); }catch(x){ logErr("ranking post " + x); } };
+    var req = null;
     try{
         var q = Object.keys(params).map(k => k + "=" + java.net.URLEncoder.encode(String(params[k]), "UTF-8")).join("&");
-        Packages.arc.util.Http.get(SHEET_URL + "?" + q)
-            .timeout(15000)
-            .error(cons(e => { var m = "error"; try{ m = String(e); }catch(x){} post(() => safe(null, m)); }))
-            .submit(res => { var txt = null; try{ txt = String(res.getResultAsString()); }catch(x){} post(() => {
-                var o = null; try{ o = JSON.parse(txt); }catch(x){}
-                if(o == null || typeof o != "object") safe(null, "응답을 읽지 못했어요"); else safe(o, null); }); });
-    }catch(e){ safe(null, String(e)); }
+        req = Packages.arc.util.Http.get(SHEET_URL + "?" + q);
+    }catch(e){ logErr("ranking request " + e); safe(null, "요청을 만들지 못했어요"); return; }
+    try{ req.timeout(15000); }catch(e){ logErr("ranking timeout " + e); }   // a missing method on some builds must not stop the request
+    try{
+        req.error(cons(e => { var m = "error"; try{ m = String(e); }catch(x){} post(() => safe(null, m)); }));
+        req.submit(res => { var txt = null; try{ txt = String(res.getResultAsString()); }catch(x){} post(() => {
+            var o = null; try{ o = JSON.parse(txt); }catch(x){}
+            if(o == null || typeof o != "object") safe(null, "응답을 읽지 못했어요"); else safe(o, null); }); });
+    }catch(e){ logErr("ranking send " + e); safe(null, "요청을 보내지 못했어요"); }
 }
 // a short reason instead of the whole exception and URL (it ran off the screen, user 2026-11-04)
-function shortErr(e){ e = String(e); var m = e.match(/HTTP\s*(\d{3})/i) || e.match(/\b(\d{3})\b/);
-    if(m != null && m[1] == "403") return "접근 거부(403): 웹앱 액세스를 '모든 사용자'로";
-    if(m != null) return "HTTP " + m[1];
-    return e.length > 60 ? e.substring(0, 60) + "..." : e; }
+// no regex here: Rhino's regex engine crashed the game on some exception texts (user 2026-11-05 crash report)
+function shortErr(e){
+    var t = ""; try{ t = String(e); }catch(x){ return "오류"; }
+    var code = null, i = t.indexOf("HTTP");
+    if(i >= 0){ var j = i + 4; while(j < t.length && (t.charAt(j) == " " || t.charAt(j) == ":")) j++; var c = t.substring(j, j + 3); if(c.length == 3 && !isNaN(Number(c))) code = c; }
+    if(code == "403") return "접근 거부(403): 웹앱 액세스를 '모든 사용자'로";
+    if(code != null) return "HTTP " + code;
+    if(t.indexOf("Timeout") >= 0 || t.indexOf("timed out") >= 0) return "응답 시간 초과";
+    return t.length > 60 ? t.substring(0, 60) + "..." : t;
+}
 function sheetSubmit(tot){
     if(SHEET_URL == "") return;
     var d = {name: playerName(), mode: mode, total: tot, course: courseId(), version: VERSION, splits: splits.map(x => x.s)};
