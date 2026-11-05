@@ -23,7 +23,7 @@ function wBase(){
     }catch(e){ print("mindrun migrate " + e); }
     return base;
 }
-var BASE = wBase(), VERSION = "mindustry-speedrun/0.13.23";
+var BASE = wBase(), VERSION = "mindustry-speedrun/0.13.24";
 var DIR = BASE + "/runtime", LOGS = BASE + "/logs/mindrun";
 // 0.9 (user 2026-11-03): a run fails when its time runs out. The user's own clears were normal 47.892 s and hard 96.214 s; about 15 s on top.
 var LIMIT = {normal: 120, hard: 165};   // normal 120 s, hard 165 s (user 2026-11-04, 45 stages)   // 0.13 (user 2026-11-04): for 45 stages until timed again; was normal 90 s, hard 125 s   // normal 90 s, hard 125 s (user 2026-11-04)   // 0.10: three more stages (repair, wall-place, flare), about +15 s normal and +20 s hard until the user measures again
@@ -52,10 +52,191 @@ function wr(path, v){ var f = F.absolute(path); f.parent().mkdirs(); var t = f.s
 function stamp(){ return new java.text.SimpleDateFormat("yyyyMMdd-HHmmss").format(new java.util.Date()); }
 // 0.3.2: no toFixed: in the game's Rhino it kept two significant digits (28.437 -> "28.00", user 2026-11-03), so the digits are built by hand
 function fixed(v, d){ var p = Math.pow(10, d), n = Math.round(Math.abs(v)*p), w = Math.floor(n/p), f = String(n - w*p); while(f.length < d) f = "0" + f; return (v < 0 ? "-" : "") + w + (d > 0 ? "." + f : ""); }
-function sec(s){ return fixed(s, 3) + "초"; }
+function sec(s){ return fixed(s, 3) + L("초"); }
 function stageSeed(id){ var h = 7; for(var i = 0; i < id.length; i++) h = (h*31 + id.charCodeAt(i)) % 1000000007; return h; }
 function rng(seed){ var jr = new java.util.Random(seed); return function(){ return Number(jr.nextDouble()); }; }
 function ri(r, a, b){ return a + Math.floor(r()*(b - a + 1)); }
+// ---- language (user 2026-11-05): Korean when the game is in Korean, English otherwise ----
+var EN = {
+    "초": "s",
+    "MINDRUN 배경음악만 허용": "MINDRUN music only",
+    "MINDRUN 배경음악 음량": "MINDRUN music volume",
+    "표시된 칸으로 이동하세요!": "Move to the marked tile!",
+    "대거로 이동하세요! (하드)": "Move with the Dagger! (Hard)",
+    "드릴을 설치하세요!": "Build a drill!",
+    "드릴을 설치하세요! (하드)": "Build a drill! (Hard)",
+    "컨베이어를 연결하세요!": "Connect the conveyor!",
+    "컨베이어를 연결하세요! (하드)": "Connect the conveyor! (Hard)",
+    "상자 3개에 구리를 넣으세요!": "Put copper in 3 containers!",
+    "컨베이어에 구리를 넣으세요! (하드)": "Put copper on the conveyor! (Hard)",
+    "전력을 연결하세요!": "Connect the power!",
+    "조명을 켜세요! (하드)": "Light the illuminator! (Hard)",
+    "듀오에 들어가세요!": "Get into the Duo!",
+    "분배기에 들어가세요! (하드)": "Get into the router! (Hard)",
+    "크롤러를 자폭시키세요!": "Blow up the crawler!",
+    "크롤러를 자폭시키세요! (하드)": "Blow up the crawlers! (Hard)",
+    "이 크롤러는 직접 조종할 수 없어요. 명령으로 보내세요!": "You can't control this crawler. Send it by command!",
+    "구리를 캐세요!": "Mine copper!",
+    "구리, 납, 고철을 캐세요! (하드)": "Mine copper, lead and scrap! (Hard)",
+    "듀오를 건설하세요!": "Build a Duo!",
+    "듀오를 건설하세요! (하드)": "Build Duos! (Hard)",
+    "대거를 막으세요!": "Stop the daggers!",
+    "대거를 막으세요! (하드)": "Stop the daggers! (Hard)",
+    "스위치를 켜세요!": "Flip the switch!",
+    "스위치를 켜세요! (하드)": "Flip the switches! (Hard)",
+    "문을 여세요!": "Open the door!",
+    "문을 여세요! (하드)": "Open the door! (Hard)",
+    "컨베이어를 돌리세요!": "Rotate the conveyor!",
+    "컨베이어를 돌리세요! (하드)": "Rotate the conveyors! (Hard)",
+    "코어에서 상자로 옮기세요!": "Move items from the core to the container!",
+    "코어에서 상자로 옮기세요! (하드)": "Move items from the core to the containers! (Hard)",
+    "토륨 원자로를 폭발시키세요!": "Blow up the thorium reactor!",
+    "토륨 원자로를 폭발시키세요! (하드)": "Blow up the thorium reactor! (Hard)",
+    "필터를 설정하세요!": "Set the sorter!",
+    "필터를 설정하세요! (하드)": "Set the sorters! (Hard)",
+    "교차시키세요!": "Cross them!",
+    "교차시키세요! (하드)": "Cross them! (Hard)",
+    "벽을 부수세요!": "Break the wall!",
+    "벽을 부수세요! (하드)": "Break the walls! (Hard)",
+    "물을 연결하세요!": "Connect the water!",
+    "물을 연결하세요! (하드)": "Connect the water! (Hard)",
+    "플라즈마 굴착기를 설치하세요!": "Build a plasma bore!",
+    "플라즈마 굴착기를 설치하세요! (하드)": "Build a plasma bore! (Hard)",
+    "부서진 걸 재건하세요!": "Rebuild what broke!",
+    "부서진 걸 재건하세요! (하드)": "Rebuild what broke! (Hard)",
+    "방폭문을 지나가세요!": "Pass the blast door!",
+    "방폭문을 지나가세요! (하드)": "Pass the blast doors! (Hard)",
+    "똑같이 지으세요!": "Build the same!",
+    "똑같이 지으세요! (하드)": "Build the same! (Hard)",
+    "덕트를 연결하세요!": "Connect the duct!",
+    "덕트를 연결하세요! (하드)": "Connect the duct! (Hard)",
+    "다리를 놓으세요!": "Bridge the river!",
+    "다리를 놓으세요! (하드)": "Bridge the river! (Hard)",
+    "언로더를 설정하세요!": "Set the unloader!",
+    "언로더를 설정하세요! (하드)": "Set the unloaders! (Hard)",
+    "실리콘을 만드세요!": "Make silicon!",
+    "실리콘을 만드세요! (하드)": "Make silicon! (Hard)",
+    "불을 밝히세요!": "Light it up!",
+    "불을 밝히세요! (하드)": "Light it up! (Hard)",
+    "프로세서를 연결하세요!": "Link the processor!",
+    "프로세서를 연결하세요! (하드)": "Link the processor! (Hard)",
+    "불을 끄세요!": "Put out the fires!",
+    "불을 끄세요! (하드)": "Put out the fires! (Hard)",
+    "제작기에 들어가세요!": "Fly into the reconstructor!",
+    "제작기에 들어가세요! (하드)": "Fly into the reconstructor! (Hard)",
+    "재생 프로젝터를 켜세요!": "Power the regen projector!",
+    "재생 프로젝터를 켜세요! (하드)": "Power the regen projector! (Hard)",
+    "베릴륨을 캐세요!": "Mine beryllium!",
+    "베릴륨, 흑연을 캐세요! (하드)": "Mine beryllium and graphite! (Hard)",
+    "노바로 벽을 넘으세요!": "Jump the wall with a Nova!",
+    "노바로 벽을 넘으세요! (하드)": "Jump the walls with a Nova! (Hard)",
+    "Shift를 누르고 있으면 날아올라요!": "Hold Shift to fly up!",
+    "보호막을 켜세요!": "Turn on the force projector!",
+    "보호막을 켜세요! (하드)": "Turn on the force projector! (Hard)",
+    "적 코어에 핑을 찍으세요!": "Ping the enemy core!",
+    "적 코어에 핑을 찍으세요! (하드)": "Ping the enemy core! (Hard)",
+    "브리치에 장전하세요!": "Load the Breach!",
+    "브리치에 장전하세요! (하드)": "Load the Breach! (Hard)",
+    "적을 막으세요!": "Stop the enemy!",
+    "적을 막으세요! (하드)": "Stop the enemy! (Hard)",
+    "빔 노드를 연결하세요!": "Connect the beam node!",
+    "빔 노드를 연결하세요! (하드)": "Connect the beam nodes! (Hard)",
+    "증기 터빈을 올리세요!": "Build a steam turbine!",
+    "증기 터빈을 올리세요! (하드)": "Build steam turbines! (Hard)",
+    "물탱크를 채우세요!": "Fill the water tank!",
+    "물탱크를 채우세요! (하드)": "Fill the water tank! (Hard)",
+    "용암을 건너세요!": "Cross the lava!",
+    "용암을 건너세요! (하드)": "Cross the lava! (Hard)",
+    "메모를 똑같이 쓰세요!": "Copy the message!",
+    "메모를 똑같이 쓰세요! (하드)": "Copy the message! (Hard)",
+    "똑같이 그리세요!": "Draw the same!",
+    "똑같이 그리세요! (하드)": "Draw the same! (Hard)",
+    "레이더를 세우세요!": "Build a radar!",
+    "레이더를 세우세요! (하드)": "Build a radar! (Hard)",
+    "숨은 상자를 찾으세요!": "Find the hidden container!",
+    "숨은 상자를 찾으세요! (하드)": "Find the hidden containers! (Hard)",
+    "블럭을 수리하세요!": "Repair the block!",
+    "블럭을 수리하세요! (하드)": "Repair the block! (Hard)",
+    "방어선을 채우세요!": "Fill the defence line!",
+    "방어선을 채우세요! (하드)": "Fill the defence line! (Hard)",
+    "플레어를 수리받게 하세요!": "Get the Flare repaired!",
+    "플레어를 수리받게 하세요! (하드)": "Get the Flares repaired! (Hard)",
+    "플레어는 직접 탈 수 없어요. 명령으로 보내세요!": "You can't ride the Flare. Send it by command!",
+    "대거를 수송하세요!": "Carry the Dagger!",
+    "배터리를 수송하세요! (하드)": "Carry the battery! (Hard)",
+    " 하드": " Hard",
+    " 연습": " Practice",
+    "맵 만들기 실패: ": "Map creation failed: ",
+    "단계 만들기 실패: ": "Stage creation failed: ",
+    "성공! ": "Clear! ",
+    "  최고 기록!": "  Best!",
+    "  (최고 ": "  (best ",
+    "건너뜀 +": "Skipped +",
+    "초 ": "s ",
+    "건너뜀 ": "skipped ",
+    "총 ": "Total ",
+    "  [accent]최고 기록![]": "  [accent]New best![]",
+    "\n[accent]하드모드가 열렸어요![]": "\n[accent]Hard mode unlocked![]",
+    "\n하드모드: 노말을 건너뛰기 없이 깨면 열려요": "\nHard mode: clear Normal without skips to unlock",
+    "하드 ": "Hard ",
+    "완료": "Complete",
+    "취소": "Close",
+    "한 판 더": "Again",
+    "하드모드 도전": "Try Hard",
+    "MINDRUN 준비 중...": "MINDRUN loading...",
+    "연습 ": "Practice ",
+    " (하드)": " (Hard)",
+    "[lightgray]최고기록: ": "[lightgray]Best: ",
+    "[lightgray]총: ": "[lightgray]Total: ",
+    "남은 시간: ": "Time left: ",
+    "\n[white]현재: ": "\n[white]Now: ",
+    "시간 초과": "Time's up",
+    "[scarlet]시간 초과![]\n\n": "[scarlet]Time's up![]\n\n",
+    "단계까지 깼어요\n제한 ": " stages cleared\nLimit ",
+    "] 준비 중...": "] loading...",
+    "[MINDRUN 연습 ": "[MINDRUN Practice ",
+    "   (최고 ": "   (best ",
+    "   (총 ": "   (total ",
+    "랭킹 주소가 아직 설정되지 않았어요": "Ranking URL is not set",
+    "요청을 만들지 못했어요": "Could not make the request",
+    "응답을 읽지 못했어요": "Could not read the reply",
+    "요청을 보내지 못했어요": "Could not send the request",
+    "오류": "Error",
+    "접근 거부(403): 웹앱 액세스를 '모든 사용자'로": "Access denied (403)",
+    "응답 시간 초과": "Timed out",
+    "랭킹에 등록했어요 (": "Ranked (",
+    "랭킹 등록 실패: ": "Ranking failed: ",
+    "MINDRUN 랭킹": "MINDRUN Ranking",
+    "불러오는 중...": "Loading...",
+    "[lightgray]이름: ": "[lightgray]Name: ",
+    "  (설정의 플레이어 이름)[]": "  (player name in Settings)[]",
+    "불러오지 못했어요\n": "Could not load\n",
+    "빈 응답": "Empty reply",
+    "아직 기록이 없어요": "No records yet",
+    "   [잠김]": "   [locked]",
+    "하드모드는 노말을 건너뛰기 없이 깨면 열려요 (제한 ": "Hard mode unlocks when you clear Normal without skips (limit ",
+    "초).\n노말 최고: ": "s).\nNormal best: ",
+    "없음": "none",
+    "랭킹": "Ranking",
+    "노말": "Normal",
+    "하드": "Hard",
+    "이전 단계": "Previous",
+    "다시": "Retry",
+    "다음 단계": "Next",
+    "끄기": "off",
+    "켜기": "on",
+    "그만하기": "Quit",
+    "처음부터 다시": "Restart",
+    "건너뛰기 (+": "Skip (+",
+    "초)": "s)"
+};
+var langKo = null;
+function isKo(){
+    if(langKo != null) return langKo;
+    try{ var b = Packages.arc.Core.bundle; if(b != null && b.getLocale() != null){ langKo = String(b.getLocale().getLanguage()) == "ko"; return langKo; } }catch(e){}
+    try{ return String(java.util.Locale.getDefault().getLanguage()) == "ko"; }catch(e){ return true; }
+}
+function L(ko){ if(isKo()) return ko; var en = EN[ko]; return en == null ? ko : en; }
 function itemName(name){ var it = Vars.content.item(name); return it == null ? name : String(it.localizedName); }
 
 // ---- rooms ----
@@ -133,8 +314,8 @@ function musicVolume(){
 function musicSettings(){
     try{
         var props = Packages.arc.Core.bundle.getProperties();
-        props.put("setting.mindrun-music-only.name", "MINDRUN 배경음악만 허용");
-        props.put("setting.mindrun-musicvol.name", "MINDRUN 배경음악 음량");
+        props.put("setting.mindrun-music-only.name", L("MINDRUN 배경음악만 허용"));
+        props.put("setting.mindrun-musicvol.name", L("MINDRUN 배경음악 음량"));
     }catch(e){ print("mindrun bundle " + e); }
     var snd = Vars.ui.settings.sound;
     snd.checkPref("mindrun-music-only", false);
@@ -297,9 +478,9 @@ function noBuild(){ var u = Vars.player.unit(); if(u != null){ try{ u.plans.clea
 function wallNext(c){ var p = c.spots[c.n]; if(p == null) return; var t = T(p[0], p[1]); if(t.build != null) t.setAir(); t.setBlock(B.copperWall, Team.sharded); }
 
 var MISSIONS = [
-    {id: "move", title: "표시된 칸으로 이동하세요!", sandbox: true, themes: ["grass", "snow"],
+    {id: "move", title: L("표시된 칸으로 이동하세요!"), sandbox: true, themes: ["grass", "snow"],
      plan: (c, r) => {
-        if(c.hard){ c.shape = "rect"; c.tx = W - 4; c.ty = ri(r, CY - 2, CY + 2); c.title = "대거로 이동하세요! (하드)"; }
+        if(c.hard){ c.shape = "rect"; c.tx = W - 4; c.ty = ri(r, CY - 2, CY + 2); c.title = L("대거로 이동하세요! (하드)"); }
         else{ c.tx = ri(r, 20, W - 5); c.ty = ri(r, 3, H - 4); }
         c.keep = [[c.tx - 2, c.ty - 2, c.tx + 2, c.ty + 2]];
      },
@@ -331,11 +512,11 @@ var MISSIONS = [
      check: c => { var u = Vars.player.unit(); return u != null && u.within(c.tx*8, c.ty*8, 12); }},
 
     // only the mechanical drill, so the build menu does not slow you down (user 2026-11-03)
-    {id: "drill", title: "드릴을 설치하세요!", sandbox: true, themes: ["desert", "cave"], allow: ["mechanical-drill"],
+    {id: "drill", title: L("드릴을 설치하세요!"), sandbox: true, themes: ["desert", "cave"], allow: ["mechanical-drill"],
      plan: (c, r) => {
         c.ox = ri(r, 14, W - 7); c.oy = ri(r, 4, H - 6); c.keep = [[c.ox - 3, c.oy - 3, c.ox + 4, c.oy + 4]];
         // hard (user 2026-11-03): a wall on one of the four ore tiles, so one drill cannot cover the rest; every ore tile must be under a drill
-        if(c.hard){ c.block = Math.floor(r()*4); c.title = "드릴을 설치하세요! (하드)"; }
+        if(c.hard){ c.block = Math.floor(r()*4); c.title = L("드릴을 설치하세요! (하드)"); }
      },
      place: (c, r) => {
         c.ores = [];
@@ -350,7 +531,7 @@ var MISSIONS = [
         ? c.ores.every(p => { var t = T(p[0], p[1]); return t != null && t.build != null && String(t.build.block.name).indexOf("drill") >= 0; })
         : c.ores.some(p => { var t = T(p[0], p[1]); return t != null && t.build != null && String(t.build.block.name).indexOf("drill") >= 0; })},   // on the copper ore: sand floors are minable too (user 2026-11-03)
 
-    {id: "conveyor", title: "컨베이어를 연결하세요!", sandbox: true, themes: ["factory", "cave"],
+    {id: "conveyor", title: L("컨베이어를 연결하세요!"), sandbox: true, themes: ["factory", "cave"],
      allow: ["conveyor"],   // no bridges over the walls (user 2026-11-03)
      plan: (c, r) => {
         if(c.hard){   // walls across the way, so the belt has to zigzag (user 2026-11-03)
@@ -364,7 +545,7 @@ var MISSIONS = [
             c.keep = [[7, Math.min(y1, y2) - 2, Math.min(W - 2, c.ex + 6), Math.max(y1, y2) + 3]];
         }
         c.endX = Math.min(W - 5, c.ex + 3);
-        if(c.hard) c.title = "컨베이어를 연결하세요! (하드)";
+        if(c.hard) c.title = L("컨베이어를 연결하세요! (하드)");
      },
      place: (c, r) => {
         T(8, c.y1).setBlock(B.itemSource, Team.sharded);
@@ -397,11 +578,11 @@ var MISSIONS = [
 
     // by hand, not belts: belts were too slow for the pace (user 2026-11-03). The unit always carries 10 copper; drop it into all three.
     // hard (user 2026-11-03): three single conveyors instead of containers, a smaller target; each counts once it has held an item
-    {id: "boxes", title: "상자 3개에 구리를 넣으세요!", sandbox: true, themes: ["factory", "desert"],
+    {id: "boxes", title: L("상자 3개에 구리를 넣으세요!"), sandbox: true, themes: ["factory", "desert"],
      plan: (c, r) => { c.boxes = [[ri(r, 12, 16), ri(r, 2, 5)], [ri(r, 18, 24), ri(r, CY - 1, CY)], [ri(r, 26, W - 5), ri(r, H - 6, H - 4)]];
         if(r() < 0.5) c.boxes.forEach(p => p[1] = H - 1 - p[1] - 1);   // mirrored half the time
         c.rots = c.boxes.map(p => Math.floor(r()*4));
-        if(c.hard) c.title = "컨베이어에 구리를 넣으세요! (하드)";
+        if(c.hard) c.title = L("컨베이어에 구리를 넣으세요! (하드)");
         c.keep = c.boxes.map(p => [p[0] - 1, p[1] - 1, p[0] + 2, p[1] + 2]); },
      place: (c, r) => c.boxes.forEach((p, i) => T(p[0], p[1]).setBlock(c.hard ? B.conveyor : B.container, Team.sharded, c.hard ? c.rots[i] : 0)),
      start: c => { c.got = c.boxes.map(p => false); },
@@ -410,10 +591,10 @@ var MISSIONS = [
         return c.got.every(x => x); }},
 
     // hard (user 2026-11-03): connect, then fire the generator with the coal the unit carries (always 10) until the lamp by the battery lights
-    {id: "power", title: "전력을 연결하세요!", sandbox: true, themes: ["factory", "cave"], allow: ["power-node"],
+    {id: "power", title: L("전력을 연결하세요!"), sandbox: true, themes: ["factory", "cave"], allow: ["power-node"],
      plan: (c, r) => { c.g = [ri(r, 9, 12), ri(r, 3, H - 4)]; c.b = [ri(r, W - 9, W - 5), ri(r, 3, H - 4)];   // farther apart than one node reaches
         c.keep = [[c.g[0] - 1, c.g[1] - 1, c.g[0] + 1, c.g[1] + 1], [c.b[0] - 1, c.b[1] - 1, c.b[0] + 2, c.b[1] + 1]];
-        if(c.hard) c.title = "조명을 켜세요! (하드)"; },
+        if(c.hard) c.title = L("조명을 켜세요! (하드)"); },
      place: (c, r) => { T(c.g[0], c.g[1]).setBlock(B.combustionGenerator, Team.sharded); T(c.b[0], c.b[1]).setBlock(B.battery, Team.sharded);
         if(c.hard) T(c.b[0] + 1, c.b[1]).setBlock(B.illuminator, Team.sharded);
         // a friend built a node over the generator (user 2026-11-04): the given blocks come back the moment they are replaced or broken
@@ -428,20 +609,20 @@ var MISSIONS = [
 
     // replaces "fill the Duo". A player can take control of a turret or a router (ControlBlock).
     // the router was the harder one to see on the floor (user 2026-11-03): normal enters a Duo, hard the router
-    {id: "router", title: "듀오에 들어가세요!", sandbox: true, themes: ["grass", "spore", "desert", "snow", "cave"],   // normal: any theme but metal (user 2026-11-03)
+    {id: "router", title: L("듀오에 들어가세요!"), sandbox: true, themes: ["grass", "spore", "desert", "snow", "cave"],   // normal: any theme but metal (user 2026-11-03)
      plan: (c, r) => { c.rx = ri(r, 18, W - 4); c.ry = ri(r, 3, H - 4); c.keep = [[c.rx - 1, c.ry - 1, c.rx + 1, c.ry + 1]];
-        if(c.hard){ c.title = "분배기에 들어가세요! (하드)"; c.theme = "factory"; } },   // hard: always on metal floor, where the router is hard to spot (user 2026-11-03)
+        if(c.hard){ c.title = L("분배기에 들어가세요! (하드)"); c.theme = "factory"; } },   // hard: always on metal floor, where the router is hard to spot (user 2026-11-03)
      place: (c, r) => { T(c.rx, c.ry).setBlock(c.hard ? B.router : B.duo, Team.sharded); protect(c, c.rx, c.ry); },
      start: c => {},
      check: c => { var u = Vars.player.unit(); if(u == null || u.type != U.block) return false; var b = u.tile(); return b != null && b.tile.x == c.rx && b.tile.y == c.ry; }},
 
-    {id: "crawler", title: "크롤러를 자폭시키세요!", sandbox: true, themes: ["grass", "spore"],
+    {id: "crawler", title: L("크롤러를 자폭시키세요!"), sandbox: true, themes: ["grass", "spore"],
      plan: (c, r) => {
         c.wx = W - ri(r, 7, 9); c.wy = ri(r, 3, H - 6);
         c.keep = [[c.wx - 2, c.wy - 2, c.wx + 4, c.wy + 4]];
         // hard: three by the core, one near the enemy walls but out of its reach (range 5 tiles, blast 7), so it needs an order
         c.spawns = c.hard ? [[8, CY - 1], [8, CY], [8, CY + 1], [c.wx - 12, c.wy + 1]] : [[8, CY]];
-        if(c.hard){ c.keep.push([c.wx - 13, c.wy, c.wx - 11, c.wy + 2]); c.title = "크롤러를 자폭시키세요! (하드)"; }
+        if(c.hard){ c.keep.push([c.wx - 13, c.wy, c.wx - 11, c.wy + 2]); c.title = L("크롤러를 자폭시키세요! (하드)"); }
      },
      place: (c, r) => {
         var path = THEMES[c.theme].path, x0 = 5, y1 = c.wy + 1, n = Math.max(1, c.wx - x0);   // a dirt track to the enemy walls (user's picture)
@@ -460,19 +641,19 @@ var MISSIONS = [
         var back = c.lastOwn;
         if(back != null && back.isAdded() && back.team == Team.sharded && back != c.far) Vars.player.unit(back); else Vars.player.clearUnit();
         try{ c.far.resetController(); }catch(e){}
-        Vars.ui.showInfoToast("이 크롤러는 직접 조종할 수 없어요. 명령으로 보내세요!", 1.5);
+        Vars.ui.showInfoToast(L("이 크롤러는 직접 조종할 수 없어요. 명령으로 보내세요!"), 1.5);
      },
      check: c => c.dead >= c.spawns.length},
 
     // chain (user 2026-11-03): mine copper -> build a Duo -> stop the daggers, with the copper you mined. Building costs a quarter here.
     // hard asked copper, lead, sand: sand floors are playerUnmineable in v146, so scrap stands in for sand
-    {id: "mine", title: "구리를 캐세요!", sandbox: false, cost: 0.25, themes: ["cave", "snow"],
+    {id: "mine", title: L("구리를 캐세요!"), sandbox: false, cost: 0.25, themes: ["cave", "snow"],
      plan: (c, r) => {
         c.items = c.hard ? ["copper", "lead", "scrap"] : ["copper"]; c.patches = [];
         var xs = c.hard ? [ri(r, 10, 12), ri(r, 16, 19), ri(r, 23, 26)] : [ri(r, 12, 18)];
         c.items.forEach((it, i) => c.patches.push([xs[i], ri(r, 3, H - 7)]));
         c.keep = c.patches.map(p => [p[0] - 1, p[1] - 1, p[0] + 4, p[1] + 4]);
-        if(c.hard) c.title = "구리, 납, 고철을 캐세요! (하드)";
+        if(c.hard) c.title = L("구리, 납, 고철을 캐세요! (하드)");
      },
      place: (c, r) => c.items.forEach((it, i) => { var p = c.patches[i];
         for(var x = p[0]; x < p[0] + 4; x++) for(var y = p[1]; y < p[1] + 4; y++) T(x, y).setOverlay(Vars.content.block("ore-" + it)); }),
@@ -483,20 +664,20 @@ var MISSIONS = [
         return c.items.map(it => { var item = Vars.content.item(it), held = (u != null && u.stack != null && u.stack.item == item) ? Number(u.stack.amount) : 0;
             c.mined[it] = Math.max(0, Number(core.items.get(item)) - c.core0[it] + held); return c.mined[it] >= 1; }).every(x => x); }},   // one of each (user 2026-11-05)
 
-    {id: "build-duo", title: "듀오를 건설하세요!", chain: true, sandbox: false, cost: 0.25, allow: ["duo"], themes: ["cave", "snow"],
+    {id: "build-duo", title: L("듀오를 건설하세요!"), chain: true, sandbox: false, cost: 0.25, allow: ["duo"], themes: ["cave", "snow"],
      plan: (c, r) => { c.keep = []; }, place: (c, r) => {},   // practice only: a room of its own
      // the ore goes once mining is done, and the core holds 100 copper: 10 mined was not enough for two Duos in hard (user 2026-11-03)
      start: c => { (c.patches || []).forEach(p => { for(var x = p[0]; x < p[0] + 4; x++) for(var y = p[1]; y < p[1] + 4; y++){ var t = T(x, y); if(t != null && t.overlay() != B.air) t.setOverlay(B.air); } });
         redrawFloor(); holdCopper(100);
-        c.duos0 = teamBuilds(b => b.block == B.duo).length; c.need = c.hard ? 2 : 1; if(c.hard) c.title = "듀오를 건설하세요! (하드)"; },
+        c.duos0 = teamBuilds(b => b.block == B.duo).length; c.need = c.hard ? 2 : 1; if(c.hard) c.title = L("듀오를 건설하세요! (하드)"); },
      tick: c => holdCopper(100),
      check: c => teamBuilds(b => b.block == B.duo).length - c.duos0 >= c.need},
 
-    {id: "daggers", title: "대거를 막으세요!", chain: true, sandbox: false, cost: 0.25, themes: ["cave", "snow"],
+    {id: "daggers", title: L("대거를 막으세요!"), chain: true, sandbox: false, cost: 0.25, themes: ["cave", "snow"],
      plan: (c, r) => { c.keep = [[11, CY - 2, 14, CY + 2]]; },
      place: (c, r) => { T(12, CY).setBlock(B.duo, Team.sharded, 0); if(c.hard) T(12, CY - 2).setBlock(B.duo, Team.sharded, 0); },   // practice only: the Duos are given
      // daggers have 1 hp and do not shoot; Duos fire only while the player controls one; the player's own gun is off (user 2026-11-03)
-     start: c => { c.daggersDead = 0; c.daggers = c.hard ? 4 : 2; if(c.hard) c.title = "대거를 막으세요! (하드)";
+     start: c => { c.daggersDead = 0; c.daggers = c.hard ? 4 : 2; if(c.hard) c.title = L("대거를 막으세요! (하드)");
         // inside the Duos' reach wherever they were built (Duo range ~13 tiles; a Duo by the core left the daggers out of range, user 2026-11-03)
         var duos = teamBuilds(b => b.block == B.duo);
         for(var i = 0; i < c.daggers; i++){
@@ -514,24 +695,24 @@ var MISSIONS = [
      check: c => c.daggersDead >= c.daggers},
 
     // ---- 0.8 stages (user 2026-11-03) ----
-    {id: "switch", title: "스위치를 켜세요!", sandbox: true, themes: ["factory", "grass"],
+    {id: "switch", title: L("스위치를 켜세요!"), sandbox: true, themes: ["factory", "grass"],
      plan: (c, r) => {
         c.sw = c.hard ? [[ri(r, 12, 15), ri(r, 2, 4)], [ri(r, 18, 22), ri(r, H - 5, H - 3)], [ri(r, 24, 28), ri(r, 2, 4)], [ri(r, 30, W - 3), ri(r, H - 5, H - 3)]]
                       : [[ri(r, 18, W - 4), ri(r, 3, H - 4)]];
         c.keep = c.sw.map(p => [p[0] - 1, p[1] - 1, p[0] + 1, p[1] + 1]);
-        if(c.hard) c.title = "스위치를 켜세요! (하드)";
+        if(c.hard) c.title = L("스위치를 켜세요! (하드)");
      },
      place: (c, r) => c.sw.forEach(p => { var t = T(p[0], p[1]); t.setBlock(B.switchBlock, Team.sharded); if(t.build != null) t.build.enabled = false; protect(c, p[0], p[1]); }),
      start: c => {},
      check: c => c.sw.every(p => { var t = T(p[0], p[1]); return t != null && t.build != null && t.build.block == B.switchBlock && t.build.enabled; })},
 
     // walls wall to wall with one door each; open it and walk through to the marked square
-    {id: "door", title: "문을 여세요!", sandbox: true, themes: ["factory", "snow"],
+    {id: "door", title: L("문을 여세요!"), sandbox: true, themes: ["factory", "snow"],
      plan: (c, r) => {
         c.shape = "rect"; c.lines = [ri(r, 16, 22)];   // one door in both modes; normal has the large (2x2) door, hard the small one (user 2026-11-04)
         c.doors = c.lines.map(x => [x, ri(r, 3, H - 5)]);
         c.tx = W - 4; c.ty = ri(r, 4, H - 5); c.keep = [[c.tx - 2, c.ty - 2, c.tx + 2, c.ty + 2]];
-        if(c.hard) c.title = "문을 여세요! (하드)";
+        if(c.hard) c.title = L("문을 여세요! (하드)");
      },
      place: (c, r) => {
         for(var x = c.tx - 1; x <= c.tx + 1; x++) for(var y = c.ty - 1; y <= c.ty + 1; y++) T(x, y).setFloor(markFloor());
@@ -554,12 +735,12 @@ var MISSIONS = [
      check: c => { var u = Vars.player.unit(); return u != null && u.type != U.block && u.within(c.tx*8, c.ty*8, 12); }},
 
     // a belt turned the wrong way: build over it facing the container (that is how a placed block turns)
-    {id: "rotate", title: "컨베이어를 돌리세요!", sandbox: true, themes: ["factory", "desert"], allow: ["conveyor"],
+    {id: "rotate", title: L("컨베이어를 돌리세요!"), sandbox: true, themes: ["factory", "desert"], allow: ["conveyor"],
      plan: (c, r) => {
         c.sets = c.hard ? [[ri(r, 12, 15), ri(r, 3, 5)], [ri(r, 19, 23), ri(r, CY - 1, CY + 1)], [ri(r, 27, W - 6), ri(r, H - 6, H - 4)]] : [[ri(r, 16, W - 7), ri(r, 3, H - 5)]];
         c.rots = c.sets.map(p => [1, 2, 3][Math.floor(r()*3)]);   // never already right
         c.keep = c.sets.map(p => [p[0] - 2, p[1] - 2, p[0] + 3, p[1] + 2]);
-        if(c.hard) c.title = "컨베이어를 돌리세요! (하드)";
+        if(c.hard) c.title = L("컨베이어를 돌리세요! (하드)");
      },
      place: (c, r) => c.sets.forEach((p, i) => {
         T(p[0] - 1, p[1]).setBlock(B.itemSource, Team.sharded); var sb = T(p[0] - 1, p[1]).build; if(sb != null) sb.outputItem = I.copper;
@@ -574,12 +755,12 @@ var MISSIONS = [
     // take lead out of the core and drop it in the container (hard: three items, each container already holds one of its own)
     // 0.9.1 (user 2026-11-03): "boxes" and "core-take" merged: take items out of the core and carry them to the container.
     // hard: three items, each container labelled by filters set to its item beside it (the pre-filled item could not be seen)
-    {id: "core-take", title: "코어에서 상자로 옮기세요!", sandbox: true, themes: ["factory", "cave"],
+    {id: "core-take", title: L("코어에서 상자로 옮기세요!"), sandbox: true, themes: ["factory", "cave"],
      plan: (c, r) => {
         c.items = c.hard ? ["lead", "coal", "sand"] : ["lead"];
         c.boxes = c.hard ? [[ri(r, 12, 15), ri(r, 2, 4)], [ri(r, 18, 22), ri(r, H - 6, H - 4)], [ri(r, 25, W - 5), ri(r, 3, 6)]] : [[ri(r, 14, W - 5), ri(r, 3, H - 5)]];
         c.keep = c.boxes.map(p => [p[0] - 2, p[1] - 1, p[0] + 2, p[1] + 2]);
-        if(c.hard) c.title = "코어에서 상자로 옮기세요! (하드)";
+        if(c.hard) c.title = L("코어에서 상자로 옮기세요! (하드)");
      },
      place: (c, r) => c.boxes.forEach((p, i) => { T(p[0], p[1]).setBlock(B.container, Team.sharded); protect(c, p[0], p[1]);
         if(!c.hard) return;
@@ -591,8 +772,8 @@ var MISSIONS = [
 
     // the ending (user 2026-11-04): a long straight run, narrowing to the reactor at the far end, in a 10x Dagger.
     // the Dagger carries 10 thorium to put in it; hard adds a few posts (not a tight zigzag).
-    {id: "reactor", title: "토륨 원자로를 폭발시키세요!", sandbox: true, themes: ["desert", "cave"],
-     plan: (c, r) => { c.shape = "rect"; c.bx = WW - 6; c.by = CY; c.keep = []; if(c.hard) c.title = "토륨 원자로를 폭발시키세요! (하드)"; },
+    {id: "reactor", title: L("토륨 원자로를 폭발시키세요!"), sandbox: true, themes: ["desert", "cave"],
+     plan: (c, r) => { c.shape = "rect"; c.bx = WW - 6; c.by = CY; c.keep = []; if(c.hard) c.title = L("토륨 원자로를 폭발시키세요! (하드)"); },
      place: (c, r) => {
         var wall = wallFor(c), fl = THEMES[c.theme].floor[0];
         function half(x){ return Math.max(2, Math.round(7 - 5*(x - 5)/(WW - 12))); }
@@ -626,13 +807,13 @@ var MISSIONS = [
      check: c => { var t = T(c.bx, c.by); return t == null || t.build == null || t.build.block != B.thoriumReactor; }},
 
     // the filter (sorter) must let the item on its belt through to the container ahead; it cannot be removed (user 2026-11-03)
-    {id: "filter", title: "필터를 설정하세요!", sandbox: true, themes: ["factory", "desert"],
+    {id: "filter", title: L("필터를 설정하세요!"), sandbox: true, themes: ["factory", "desert"],
      plan: (c, r) => {
         c.items = c.hard ? ["lead", "coal", "sand"] : ["copper"];
         c.rows = c.hard ? [CY - 5, CY, CY + 5] : [ri(r, 4, H - 5)];
         c.fx = ri(r, 18, 24);
         c.keep = c.rows.map(y => [9, y - 1, c.fx + 3, y + 1]);
-        if(c.hard) c.title = "필터를 설정하세요! (하드)";
+        if(c.hard) c.title = L("필터를 설정하세요! (하드)");
      },
      place: (c, r) => c.rows.forEach((y, i) => {
         T(10, y).setBlock(B.itemSource, Team.sharded); var sb = T(10, y).build; if(sb != null) sb.outputItem = Vars.content.item(c.items[i]);
@@ -645,13 +826,13 @@ var MISSIONS = [
      check: c => c.rows.every((y, i) => { var t = T(c.fx, y); return t != null && t.build != null && t.build.sortItem == Vars.content.item(c.items[i]); })},
 
     // two belts cross at one empty tile: only a junction can be built
-    {id: "junction", title: "교차시키세요!", sandbox: true, themes: ["factory", "cave"], allow: ["junction"],
+    {id: "junction", title: L("교차시키세요!"), sandbox: true, themes: ["factory", "cave"], allow: ["junction"],
      plan: (c, r) => {
         c.shape = "rect"; c.hy = ri(r, 6, H - 7);
         c.vx = c.hard ? [ri(r, 14, 18), ri(r, 23, 27)] : [ri(r, 16, 24)];
         c.hx0 = 10; c.hx1 = Math.max.apply(null, c.vx) + 4;
         c.keep = [[c.hx0 - 1, c.hy - 1, c.hx1 + 2, c.hy + 2]].concat(c.vx.map(x => [x - 1, 2, x + 1, H - 3]));
-        if(c.hard) c.title = "교차시키세요! (하드)";
+        if(c.hard) c.title = L("교차시키세요! (하드)");
      },
      place: (c, r) => {
         var y = c.hy;
@@ -672,21 +853,21 @@ var MISSIONS = [
      check: c => c.vx.every(x => { var t = T(x, c.hy); return t.build != null && t.build.block == B.junction; })},
 
     // break the wall; hard: five in turn, the next appears somewhere else once one is gone (user 2026-11-03)
-    {id: "wall", title: "벽을 부수세요!", sandbox: true, themes: ["grass", "desert"],
+    {id: "wall", title: L("벽을 부수세요!"), sandbox: true, themes: ["grass", "desert"],
      plan: (c, r) => { c.spots = []; for(var i = 0; i < (c.hard ? 5 : 1); i++) c.spots.push([ri(r, 12, W - 4), ri(r, 3, H - 4)]);
-        c.keep = c.spots.map(p => [p[0] - 1, p[1] - 1, p[0] + 1, p[1] + 1]); if(c.hard) c.title = "벽을 부수세요! (하드)"; },
+        c.keep = c.spots.map(p => [p[0] - 1, p[1] - 1, p[0] + 1, p[1] + 1]); if(c.hard) c.title = L("벽을 부수세요! (하드)"); },
      place: (c, r) => {},
      start: c => { c.n = 0; wallNext(c); },
      tick: c => { var p = c.spots[c.n]; if(p == null) return; var t = T(p[0], p[1]); if(t.build == null && t.block() == B.air){ c.n++; wallNext(c); } },
      check: c => c.n >= c.spots.length},
 
     // mechanical pump on the water, conduits to the container; hard: the sealed corridor with posts
-    {id: "water", title: "물을 연결하세요!", sandbox: true, themes: ["grass", "snow"], allow: ["mechanical-pump", "conduit"],
+    {id: "water", title: L("물을 연결하세요!"), sandbox: true, themes: ["grass", "snow"], allow: ["mechanical-pump", "conduit"],
      plan: (c, r) => {
         c.shape = "rect"; c.wy = c.hard ? ri(r, CY - 2, CY + 2) : ri(r, 4, H - 6);
         c.tank = [W - 6, c.hard ? c.wy : ri(r, 3, H - 6)];
         c.keep = [[8, c.wy - 2, 13, c.wy + 2], [c.tank[0] - 1, c.tank[1] - 1, c.tank[0] + 2, c.tank[1] + 2]];
-        if(c.hard) c.title = "물을 연결하세요! (하드)";
+        if(c.hard) c.title = L("물을 연결하세요! (하드)");
      },
      place: (c, r) => {
         for(var x = 9; x <= 11; x++) for(var y = c.wy - 1; y <= c.wy + 1; y++) T(x, y).setFloor(B.water);
@@ -705,9 +886,9 @@ var MISSIONS = [
 
     // ---- 0.13 stages (user 2026-11-04): 45 in all; dull ones come out later ----
     // a plasma bore facing the beryllium in the wall; hard: two ore walls, both drilled
-    {id: "plasma-bore", title: "플라즈마 굴착기를 설치하세요!", sandbox: true, themes: ["erekir-carbon", "erekir-yellow", "erekir-arkyic"], allow: ["plasma-bore"],
+    {id: "plasma-bore", title: L("플라즈마 굴착기를 설치하세요!"), sandbox: true, themes: ["erekir-carbon", "erekir-yellow", "erekir-arkyic"], allow: ["plasma-bore"],
      plan: (c, r) => { c.shape = "rect"; c.ores = c.hard ? [[W - 6, 4], [24, H - 3]] : [[W - 8, CY + 4]];
-        c.keep = c.ores.map(p => [p[0] - 7, p[1] - 3, p[0] + 2, p[1] + 3]); if(c.hard) c.title = "플라즈마 굴착기를 설치하세요! (하드)"; },
+        c.keep = c.ores.map(p => [p[0] - 7, p[1] - 3, p[0] + 2, p[1] + 3]); if(c.hard) c.title = L("플라즈마 굴착기를 설치하세요! (하드)"); },
      place: (c, r) => c.ores.forEach((p, k) => {
         // a 2x3 ore wall; the second one in hard lies along the top wall, so the bore faces up
         for(var dx = 0; dx < (k == 1 ? 3 : 2); dx++) for(var dy = 0; dy < (k == 1 ? 2 : 3); dy++){
@@ -719,7 +900,7 @@ var MISSIONS = [
         return c.ores.every(p => bores.some(b => { for(var i = 0; i < b.facing.length; i++){ var f = b.facing[i]; if(f != null && Math.abs(f.x - p[0]) <= 3 && Math.abs(f.y - p[1]) <= 3) return true; } return false; })); }},
 
     // blocks are smashed the moment the stage starts; rebuild them with the game's rebuild (B), or by hand (user 2026-11-04: in place of the blast door)
-    {id: "rebuild", title: "부서진 걸 재건하세요!", sandbox: true, themes: ["factory", "grass"],
+    {id: "rebuild", title: L("부서진 걸 재건하세요!"), sandbox: true, themes: ["factory", "grass"],
      plan: (c, r) => { c.shape = "rect";
         // [x, y, block, rotation]
         c.parts = c.hard
@@ -728,7 +909,7 @@ var MISSIONS = [
             : [[19, 8, "copper-wall", 0], [20, 8, "copper-wall", 0], [21, 8, "copper-wall", 0], [19, 10, "copper-wall", 0], [21, 10, "copper-wall", 0], [20, 10, "duo", 0], [22, 9, "conveyor", 0]];
         c.allow = []; c.parts.forEach(p => { if(c.allow.indexOf(p[2]) < 0) c.allow.push(p[2]); });
         c.keep = [[15, 4, 26, 13]];
-        if(c.hard) c.title = "부서진 걸 재건하세요! (하드)"; },
+        if(c.hard) c.title = L("부서진 걸 재건하세요! (하드)"); },
      place: (c, r) => { for(var x = 15; x <= 26; x++) for(var y = 4; y <= 13; y++) clearDecor(x, y); },
      start: c => {
         setAllowed(c.allow);
@@ -742,10 +923,10 @@ var MISSIONS = [
         return !rotMatters(b.block) || b.rotation == p[3]; })},
 
     // (not in the run since 0.13.9, user 2026-11-04) Erekir blast doors open by themselves for a ground unit nearby; walk the Dagger through. hard: three walls
-    {id: "blast-door", title: "방폭문을 지나가세요!", sandbox: true, themes: ["erekir-carbon", "erekir-yellow", "erekir-arkyic"],
+    {id: "blast-door", title: L("방폭문을 지나가세요!"), sandbox: true, themes: ["erekir-carbon", "erekir-yellow", "erekir-arkyic"],
      plan: (c, r) => { c.shape = "rect"; c.lines = c.hard ? [[12, 3], [20, H - 5], [27, CY]] : [[18, CY - 1]];
         c.tx = W - 4; c.ty = c.hard ? 4 : CY; c.keep = [[c.tx - 2, c.ty - 2, c.tx + 2, c.ty + 2]];
-        if(c.hard) c.title = "방폭문을 지나가세요! (하드)"; },
+        if(c.hard) c.title = L("방폭문을 지나가세요! (하드)"); },
      place: (c, r) => {
         for(var x = c.tx - 1; x <= c.tx + 1; x++) for(var y = c.ty - 1; y <= c.ty + 1; y++) T(x, y).setFloor(markFloor());
         for(var ix = 1; ix <= W - 2; ix++) for(var iy = 1; iy <= H - 2; iy++) if(!isCoreTile(ix, iy)) clearDecor(ix, iy);
@@ -761,7 +942,7 @@ var MISSIONS = [
      check: c => { var u = Vars.player.unit(); return u != null && u.type != U.block && u.within(c.tx*8, c.ty*8, 12); }},
 
     // copy the structure by the core (F: copy, then paste) and build the same beyond the wall (user 2026-11-04: in place of the ducts)
-    {id: "copy", title: "똑같이 지으세요!", sandbox: true, themes: ["factory", "desert"],
+    {id: "copy", title: L("똑같이 지으세요!"), sandbox: true, themes: ["factory", "desert"],
      plan: (c, r) => { c.shape = "rect"; c.wx = 17;
         // [dx, dy, block, rotation] from the structure's corner
         c.parts = c.hard
@@ -771,7 +952,7 @@ var MISSIONS = [
         c.ox = 9; c.oy = CY + 2;
         c.allow = []; c.parts.forEach(p => { if(c.allow.indexOf(p[2]) < 0) c.allow.push(p[2]); });
         c.keep = [[c.ox - 1, c.oy - 2, c.ox + 5, c.oy + 3], [c.wx + 2, 3, W - 3, H - 4]];
-        if(c.hard) c.title = "똑같이 지으세요! (하드)"; },
+        if(c.hard) c.title = L("똑같이 지으세요! (하드)"); },
      place: (c, r) => {
         for(var x = c.ox - 1; x <= c.ox + 5; x++) for(var y = c.oy - 2; y <= c.oy + 3; y++) clearDecor(x, y);
         for(var y2 = 1; y2 <= H - 2; y2++){ clearDecor(c.wx, y2); T(c.wx, y2).setBlock(wallFor(c)); }
@@ -792,10 +973,10 @@ var MISSIONS = [
      }},
 
     // (not in the run since 0.13.9, user 2026-11-04) ducts instead of belts; hard: a thick wall across, so a duct bridge goes over it
-    {id: "duct", title: "덕트를 연결하세요!", sandbox: true, themes: ["erekir-carbon", "erekir-yellow", "erekir-arkyic"], allow: ["duct", "duct-bridge"],
+    {id: "duct", title: L("덕트를 연결하세요!"), sandbox: true, themes: ["erekir-carbon", "erekir-yellow", "erekir-arkyic"], allow: ["duct", "duct-bridge"],
      plan: (c, r) => { c.shape = "rect"; c.src = [9, c.hard ? CY : 5]; c.dst = [W - 7, c.hard ? CY + 3 : H - 6]; c.wx = 20;
         c.keep = [[c.src[0] - 1, c.src[1] - 1, c.src[0] + 1, c.src[1] + 1], [c.dst[0] - 1, c.dst[1] - 1, c.dst[0] + 2, c.dst[1] + 2]];
-        if(c.hard) c.title = "덕트를 연결하세요! (하드)"; },
+        if(c.hard) c.title = L("덕트를 연결하세요! (하드)"); },
      place: (c, r) => {
         T(c.src[0], c.src[1]).setBlock(B.itemSource, Team.sharded); var sb = T(c.src[0], c.src[1]).build; if(sb != null) sb.outputItem = I.beryllium;
         T(c.dst[0], c.dst[1]).setBlock(B.container, Team.sharded);
@@ -806,10 +987,10 @@ var MISSIONS = [
      check: c => boxGot(c.dst)},
 
     // a bridge conveyor over deep water; hard: a wider river with one island in the middle
-    {id: "bridge", title: "다리를 놓으세요!", sandbox: true, themes: ["grass", "snow"], allow: ["conveyor", "bridge-conveyor"],
+    {id: "bridge", title: L("다리를 놓으세요!"), sandbox: true, themes: ["grass", "snow"], allow: ["conveyor", "bridge-conveyor"],
      plan: (c, r) => { c.shape = "rect"; c.src = [9, CY + 2]; c.dst = [W - 6, CY + 2]; c.rx0 = 16; c.rx1 = c.hard ? 22 : 18; c.isle = c.hard ? 19 : -1;
         c.keep = [[c.src[0] - 1, c.src[1] - 1, c.src[0] + 1, c.src[1] + 1], [c.dst[0] - 1, c.dst[1] - 1, c.dst[0] + 2, c.dst[1] + 2], [c.rx0, 1, c.rx1, H - 2]];
-        if(c.hard) c.title = "다리를 놓으세요! (하드)"; },
+        if(c.hard) c.title = L("다리를 놓으세요! (하드)"); },
      place: (c, r) => {
         for(var x = c.rx0; x <= c.rx1; x++) for(var y = 1; y <= H - 2; y++){ var t = T(x, y); if(t.build == null && t.block() != B.air) t.setAir(); t.setFloor(x == c.isle && Math.abs(y - c.src[1]) <= 1 ? B.sandWater : B.deepwater); }
         T(c.src[0], c.src[1]).setBlock(B.itemSource, Team.sharded); var sb = T(c.src[0], c.src[1]).build; if(sb != null) sb.outputItem = I.copper;
@@ -822,9 +1003,9 @@ var MISSIONS = [
         var cur = b; for(var i = 0; i < 6; i++){ var l = Vars.world.build(Number(cur.link)); if(l == null || l.block != B.itemBridge) return false; if(l.tile.x > c.rx1) return true; cur = l; } return false; })},
 
     // set the unloader so only the item named by the filters beside the far container comes out
-    {id: "unloader", title: "언로더를 설정하세요!", sandbox: true, themes: ["factory"],
+    {id: "unloader", title: L("언로더를 설정하세요!"), sandbox: true, themes: ["factory"],
      plan: (c, r) => { c.items = c.hard ? ["sand", "lead", "copper"] : ["coal"]; c.rows = c.hard ? [CY - 5, CY, CY + 5] : [CY + 3]; c.ux = 18;
-        c.keep = c.rows.map(y => [c.ux - 3, y - 2, c.ux + 4, y + 2]); if(c.hard) c.title = "언로더를 설정하세요! (하드)"; },
+        c.keep = c.rows.map(y => [c.ux - 3, y - 2, c.ux + 4, y + 2]); if(c.hard) c.title = L("언로더를 설정하세요! (하드)"); },
      place: (c, r) => c.rows.forEach((y, i) => {
         T(c.ux - 2, y).setBlock(B.container, Team.sharded); T(c.ux, y).setBlock(B.unloader, Team.sharded); T(c.ux + 1, y).setBlock(B.container, Team.sharded);
         for(var dy = 0; dy < 2; dy++){ var ft = T(c.ux + 3, y + dy); ft.setBlock(B.sorter, Team.sharded); if(ft.build != null) ft.build.sortItem = Vars.content.item(c.items[i]); protect(c, c.ux + 3, y + dy); }
@@ -835,11 +1016,11 @@ var MISSIONS = [
      check: c => c.rows.every((y, i) => { var t = T(c.ux, y); return t != null && t.build != null && t.build.block == B.unloader && t.build.sortItem == Vars.content.item(c.items[i]); })},
 
     // a silicon smelter on the marked square, fed coal and sand and powered by what is beside it; hard: the feeds are away, belts needed
-    {id: "silicon", title: "실리콘을 만드세요!", sandbox: true, themes: ["factory", "cave"],
+    {id: "silicon", title: L("실리콘을 만드세요!"), sandbox: true, themes: ["factory", "cave"],
      plan: (c, r) => { c.shape = "rect"; c.s = [18, CY + 2]; c.allow = ["silicon-smelter"];   // hard is the same as normal: belts took too long (user 2026-11-04)
         c.feeds = [[c.s[0] - 1, c.s[1], "coal"], [c.s[0] - 1, c.s[1] + 1, "sand"]];
         c.keep = [[c.s[0] - 2, c.s[1] - 1, c.s[0] + 3, c.s[1] + 2]].concat(c.feeds.map(f => [f[0] - 1, f[1] - 1, f[0] + 1, f[1] + 1]));
-        if(c.hard) c.title = "실리콘을 만드세요! (하드)"; },
+        if(c.hard) c.title = L("실리콘을 만드세요! (하드)"); },
      place: (c, r) => {
         for(var x = c.s[0]; x <= c.s[0] + 1; x++) for(var y = c.s[1]; y <= c.s[1] + 1; y++) T(x, y).setFloor(markFloor());
         c.feeds.forEach(f => { T(f[0], f[1]).setBlock(B.itemSource, Team.sharded); var b = T(f[0], f[1]).build; if(b != null) b.outputItem = Vars.content.item(f[2]); protect(c, f[0], f[1]); });
@@ -849,10 +1030,10 @@ var MISSIONS = [
      check: c => teamBuilds(b => b.block == B.siliconSmelter && b.items != null && b.items.get(I.silicon) > 0).length > 0},
 
     // lights out: light the marked square with an illuminator, powered from the source by the core
-    {id: "light", title: "불을 밝히세요!", sandbox: true, themes: ["factory", "cave"], allow: ["illuminator", "power-node"],   // normal needs no nodes (0.13.10), hard does
+    {id: "light", title: L("불을 밝히세요!"), sandbox: true, themes: ["factory", "cave"], allow: ["illuminator", "power-node"],   // normal needs no nodes (0.13.10), hard does
      plan: (c, r) => { c.shape = "rect"; c.ps = [9, CY + 3]; c.tg = c.hard ? [W - 4, 2] : [24, CY - 4];
         c.keep = [[c.ps[0] - 1, c.ps[1] - 1, c.ps[0] + 1, c.ps[1] + 1], [c.tg[0] - 2, c.tg[1] - 1, c.tg[0] + 2, c.tg[1] + 2]];
-        if(c.hard) c.title = "불을 밝히세요! (하드)"; },
+        if(c.hard) c.title = L("불을 밝히세요! (하드)"); },
      place: (c, r) => {
         for(var x = c.tg[0] - 1; x <= c.tg[0] + 1; x++) for(var y = c.tg[1] - 1; y <= c.tg[1] + 1; y++){ var t = T(x, y); if(t != null && t.block() == B.air) t.setFloor(markFloor()); }
         T(c.ps[0], c.ps[1]).setBlock(B.powerSource, Team.sharded); protect(c, c.ps[0], c.ps[1]);
@@ -868,10 +1049,10 @@ var MISSIONS = [
      check: c => teamBuilds(b => b.block == B.illuminator && b.efficiency > 0 && b.within(c.tg[0]*8, c.tg[1]*8, 6*8)).length > 0},
 
     // link the processor to the door; its code opens the door. hard: two doors
-    {id: "processor", title: "프로세서를 연결하세요!", sandbox: true, themes: ["factory"],
+    {id: "processor", title: L("프로세서를 연결하세요!"), sandbox: true, themes: ["factory"],
      plan: (c, r) => { c.shape = "rect"; c.p = [14, CY + 3]; c.doors = c.hard ? [[20, 4], [19, H - 4]] : [[20, CY + 3]];
         c.keep = [[c.p[0] - 1, c.p[1] - 1, c.p[0] + 1, c.p[1] + 1]].concat(c.doors.map(d => [d[0] - 1, d[1] - 1, d[0] + 1, d[1] + 1]));
-        if(c.hard) c.title = "프로세서를 연결하세요! (하드)"; },
+        if(c.hard) c.title = L("프로세서를 연결하세요! (하드)"); },
      place: (c, r) => {
         T(c.p[0], c.p[1]).setBlock(B.microProcessor, Team.sharded);
         c.doors.forEach(d => { T(d[0], d[1]).setBlock(B.door, Team.sharded); protect(c, d[0], d[1]); });
@@ -883,12 +1064,12 @@ var MISSIONS = [
         return c.doors.every(d => { var linked = false; b.links.each(l => { if(l.valid && l.x == d[0] && l.y == d[1]) linked = true; }); var db = T(d[0], d[1]).build; return linked && db != null && db.open; }); }},
 
     // build a Tsunami by the water and put out the fires; hard: the water is further, conduits needed
-    {id: "tsunami", title: "불을 끄세요!", sandbox: true, armed: true, themes: ["grass", "desert"],
+    {id: "tsunami", title: L("불을 끄세요!"), sandbox: true, armed: true, themes: ["grass", "desert"],
      plan: (c, r) => { c.shape = "rect"; c.ws = [11, CY + 3]; c.allow = ["tsunami"];
         // hard (user 2026-11-04): the same fires, but the Tsunami does not aim by itself: the player gets in and puts them out
         c.fires = [[26, 6], [27, 7], [28, 6], [27, 5], [26, 8]];
         c.keep = [[c.ws[0] - 1, c.ws[1] - 1, c.ws[0] + 4, c.ws[1] + 3]].concat(c.fires.map(f => [f[0], f[1], f[0], f[1]]));
-        if(c.hard) c.title = "불을 끄세요! (하드)"; },
+        if(c.hard) c.title = L("불을 끄세요! (하드)"); },
      place: (c, r) => { T(c.ws[0], c.ws[1]).setBlock(B.liquidSource, Team.sharded); var b = T(c.ws[0], c.ws[1]).build; if(b != null) b.source = Packages.mindustry.content.Liquids.water; protect(c, c.ws[0], c.ws[1]); },
      start: c => { setAllowed(c.allow); c.out = 0; c.ft = {}; c.doused = {};
         c.fires.forEach(f => { var t = T(f[0], f[1]); if(t.build != null || t.block() != B.air) t.setAir(); t.setFloor(B.tar); Packages.mindustry.entities.Fires.create(t); }); redrawFloor(); },   // tar under each fire (user 2026-11-04)
@@ -910,10 +1091,10 @@ var MISSIONS = [
      check: c => c.out >= c.fires.length && teamBuilds(b => b.block == B.tsunami).length > 0},
 
     // ride a Poly and fly into the tier-3 maker (multiplicative reconstructor); hard: the other factories stand beside it
-    {id: "poly", title: "제작기에 들어가세요!", sandbox: true, themes: ["factory"],
+    {id: "poly", title: L("제작기에 들어가세요!"), sandbox: true, themes: ["factory"],
      plan: (c, r) => { c.shape = "rect"; c.rc = c.hard ? [W - 6, 5] : [W - 8, CY]; c.decoys = c.hard ? [[22, CY + 4, "additive-reconstructor"], [W - 6, H - 6, "air-factory"], [22, 4, "ground-factory"]] : [];
         c.keep = [[c.rc[0] - 3, c.rc[1] - 3, c.rc[0] + 3, c.rc[1] + 3]].concat(c.decoys.map(d => [d[0] - 2, d[1] - 2, d[0] + 2, d[1] + 2]));
-        if(c.hard) c.title = "제작기에 들어가세요! (하드)"; },
+        if(c.hard) c.title = L("제작기에 들어가세요! (하드)"); },
      place: (c, r) => {
         T(c.rc[0], c.rc[1]).setBlock(B.multiplicativeReconstructor, Team.sharded, 2); protect(c, c.rc[0], c.rc[1]);
         c.decoys.forEach(d => { T(d[0], d[1]).setBlock(Vars.content.block(d[2]), Team.sharded, 2); protect(c, d[0], d[1]); });
@@ -930,10 +1111,10 @@ var MISSIONS = [
         var arrived = false; try{ arrived = b.hasArrived() || b.payVector.len() < 1.5; }catch(e){} return arrived || Date.now() - c.inAt > 700; }},   // fully in, or a moment after going in
 
     // a regen projector on the marked square (power and hydrogen beside it) mends all the broken walls; hard: the square is not marked
-    {id: "regen", title: "재생 프로젝터를 켜세요!", sandbox: true, themes: ["erekir-carbon", "erekir-yellow", "erekir-arkyic"], allow: ["regen-projector"],
+    {id: "regen", title: L("재생 프로젝터를 켜세요!"), sandbox: true, themes: ["erekir-carbon", "erekir-yellow", "erekir-arkyic"], allow: ["regen-projector"],
      plan: (c, r) => { c.shape = "rect"; c.p = [16, CY + 3]; c.walls = c.hard ? [[22, 3], [26, 7], [12, H - 4], [28, H - 4], [20, H - 3], [9, 4]] : [[22, CY + 3], [24, CY + 5], [21, CY]];
         c.keep = [[c.p[0] - 3, c.p[1] - 2, c.p[0] + 3, c.p[1] + 2]].concat(c.walls.map(w => [w[0] - 1, w[1] - 1, w[0] + 1, w[1] + 1]));
-        if(c.hard) c.title = "재생 프로젝터를 켜세요! (하드)"; },
+        if(c.hard) c.title = L("재생 프로젝터를 켜세요! (하드)"); },
      place: (c, r) => {
         if(!c.hard) for(var x = c.p[0] - 1; x <= c.p[0] + 1; x++) for(var y = c.p[1] - 1; y <= c.p[1] + 1; y++) T(x, y).setFloor(markFloor());
         T(c.p[0] - 2, c.p[1]).setBlock(B.powerSource, Team.sharded); protect(c, c.p[0] - 2, c.p[1]);
@@ -947,10 +1128,10 @@ var MISSIONS = [
      check: c => c.walls.every(w => { var b = T(w[0], w[1]).build; return b != null && b.block == B.berylliumWall && b.health >= b.maxHealth - 0.5; })},
 
     // ride an Evoke and mine beryllium out of the wall
-    {id: "beryllium", title: "베릴륨을 캐세요!", sandbox: false, themes: ["erekir-carbon", "erekir-yellow", "erekir-arkyic"],
+    {id: "beryllium", title: L("베릴륨을 캐세요!"), sandbox: false, themes: ["erekir-carbon", "erekir-yellow", "erekir-arkyic"],
      // 0.13.23 (user 2026-11-05): one of each is enough; hard adds graphite (a second vein lower down)
      plan: (c, r) => { c.shape = "rect"; c.need = 1; c.veins = [[22, CY + 3, "beryllium"]].concat(c.hard ? [[22, CY - 6, "graphite"]] : []);
-        c.keep = c.veins.map(v => [v[0] - 2, v[1] - 2, v[0] + 4, v[1] + 4]); if(c.hard) c.title = "베릴륨, 흑연을 캐세요! (하드)"; },
+        c.keep = c.veins.map(v => [v[0] - 2, v[1] - 2, v[0] + 4, v[1] + 4]); if(c.hard) c.title = L("베릴륨, 흑연을 캐세요! (하드)"); },
      place: (c, r) => c.veins.forEach(v => { for(var x = v[0]; x < v[0] + 3; x++) for(var y = v[1]; y < v[1] + 3; y++){ var t = T(x, y); t.setBlock(B.beryllicStoneWall); t.setOverlay(Vars.content.block("ore-wall-" + v[2])); } }),
      start: c => { mountPlayer(c, U.evoke, false); var core = Vars.player.team().core(); c.core0 = {}; c.mined = {};
         c.veins.forEach(v => c.core0[v[2]] = core == null ? 0 : Number(core.items.get(Vars.content.item(v[2])))); },
@@ -961,23 +1142,23 @@ var MISSIONS = [
             c.mined[v[2]] = Math.max(0, Number(core.items.get(item)) - c.core0[v[2]] + held); return c.mined[v[2]] >= c.need; }).every(x => x); }},
 
     // a Nova jumps (boosts, Shift) over walls; hard: three walls
-    {id: "nova", title: "노바로 벽을 넘으세요!", sandbox: true, themes: ["grass", "spore", "snow"],
+    {id: "nova", title: L("노바로 벽을 넘으세요!"), sandbox: true, themes: ["grass", "spore", "snow"],
      plan: (c, r) => { c.shape = "rect"; c.walls = c.hard ? [12, 20, 27] : [18]; c.tx = W - 4; c.ty = c.hard ? H - 5 : CY;
-        c.keep = [[c.tx - 2, c.ty - 2, c.tx + 2, c.ty + 2]]; if(c.hard) c.title = "노바로 벽을 넘으세요! (하드)"; },
+        c.keep = [[c.tx - 2, c.ty - 2, c.tx + 2, c.ty + 2]]; if(c.hard) c.title = L("노바로 벽을 넘으세요! (하드)"); },
      place: (c, r) => {
         for(var x = c.tx - 1; x <= c.tx + 1; x++) for(var y = c.ty - 1; y <= c.ty + 1; y++) T(x, y).setFloor(markFloor());
         c.walls.forEach(wx => { for(var dx = 0; dx < 2; dx++) for(var y = 1; y <= H - 2; y++){ var t = T(wx + dx, y); if(t.build == null) t.setBlock(wallFor(c)); } });
      },
-     start: c => { mountPlayer(c, U.nova, FAST3 != null ? FAST3 : true); Vars.ui.showInfoToast("Shift를 누르고 있으면 날아올라요!", 2.5); },
+     start: c => { mountPlayer(c, U.nova, FAST3 != null ? FAST3 : true); Vars.ui.showInfoToast(L("Shift를 누르고 있으면 날아올라요!"), 2.5); },
      tick: c => { keepMount(c); noBuild(); },
      leave: c => unmount(c),
      check: c => { var u = Vars.player.unit(); return u != null && u.type != U.block && u.within(c.tx*8, c.ty*8, 12); }},
 
     // an enemy Duo shoots at the container; a force projector beside the power must take the hits
-    {id: "force", title: "보호막을 켜세요!", sandbox: true, themes: ["factory", "desert"], allow: ["force-projector"],
+    {id: "force", title: L("보호막을 켜세요!"), sandbox: true, themes: ["factory", "desert"], allow: ["force-projector"],
      plan: (c, r) => { c.shape = "rect"; c.box = [16, CY]; c.ps = [14, CY + 3]; c.duos = c.hard ? [[28, CY], [27, 3], [27, H - 4]] : [[28, CY]]; c.need = c.hard ? 15 : 6;
         c.keep = [[c.box[0] - 3, c.box[1] - 2, c.box[0] + 2, c.box[1] + 5]].concat(c.duos.map(d => [d[0] - 1, d[1] - 1, d[0] + 1, d[1] + 1]));
-        if(c.hard) c.title = "보호막을 켜세요! (하드)"; },
+        if(c.hard) c.title = L("보호막을 켜세요! (하드)"); },
      place: (c, r) => {
         T(c.box[0], c.box[1]).setBlock(B.container, Team.sharded); protect(c, c.box[0], c.box[1]);
         T(c.ps[0], c.ps[1]).setBlock(B.powerSource, Team.sharded); protect(c, c.ps[0], c.ps[1]);
@@ -992,10 +1173,10 @@ var MISSIONS = [
      check: c => c.hits >= c.need},
 
     // ping the enemy core (the game's ping key, P); hard: two enemy vaults that look alike stand beside it (user 2026-11-04: in place of the Breach)
-    {id: "ping", title: "적 코어에 핑을 찍으세요!", sandbox: true, themes: ["desert", "cave", "snow"],
+    {id: "ping", title: L("적 코어에 핑을 찍으세요!"), sandbox: true, themes: ["desert", "cave", "snow"],
      plan: (c, r) => { c.shape = "rect"; c.core = c.hard ? [W - 6, H - 5] : [W - 7, CY]; c.decoys = c.hard ? [[W - 6, 4], [24, CY]] : [];
         c.keep = [[c.core[0] - 2, c.core[1] - 2, c.core[0] + 2, c.core[1] + 2]].concat(c.decoys.map(d => [d[0] - 2, d[1] - 2, d[0] + 2, d[1] + 2]));
-        if(c.hard) c.title = "적 코어에 핑을 찍으세요! (하드)"; },
+        if(c.hard) c.title = L("적 코어에 핑을 찍으세요! (하드)"); },
      place: (c, r) => {
         T(c.core[0], c.core[1]).setBlock(B.coreShard, Team.crux); protect(c, c.core[0], c.core[1]);
         c.decoys.forEach(d => { T(d[0], d[1]).setBlock(B.vault, Team.crux); protect(c, d[0], d[1]); });
@@ -1013,17 +1194,17 @@ var MISSIONS = [
 
     // (not in the run since 0.13.7: the Breach turned too slowly, user 2026-11-04)
     // Erekir's Duo and daggers: put beryllium into the Breach, then (chained) stop the daggers with it
-    {id: "breach-load", title: "브리치에 장전하세요!", sandbox: true, themes: ["erekir-carbon", "erekir-arkyic"],
-     plan: (c, r) => breachPlan(c, "브리치에 장전하세요! (하드)"),
+    {id: "breach-load", title: L("브리치에 장전하세요!"), sandbox: true, themes: ["erekir-carbon", "erekir-arkyic"],
+     plan: (c, r) => breachPlan(c, L("브리치에 장전하세요! (하드)")),
      place: (c, r) => breachPlace(c, false),
      start: c => {},
      tick: c => { var u = Vars.player.unit(); if(u != null && u.type != U.block && (u.stack.item != I.beryllium || u.stack.amount != 10)) u.stack.set(I.beryllium, 10); },
      check: c => { var b = T(c.br[0], c.br[1]).build; return b != null && b.block == B.breach && b.totalAmmo > 0; }},
 
-    {id: "breach-defend", title: "적을 막으세요!", chain: true, armed: true, sandbox: true, themes: ["erekir-carbon", "erekir-arkyic"],
-     plan: (c, r) => breachPlan(c, "적을 막으세요! (하드)"),   // practice only: the Breach comes loaded
+    {id: "breach-defend", title: L("적을 막으세요!"), chain: true, armed: true, sandbox: true, themes: ["erekir-carbon", "erekir-arkyic"],
+     plan: (c, r) => breachPlan(c, L("적을 막으세요! (하드)")),   // practice only: the Breach comes loaded
      place: (c, r) => breachPlace(c, true),
-     start: c => { if(c.hard) c.title = "적을 막으세요! (하드)"; c.daggersDead = 0; c.daggers = c.hard ? 4 : 2;
+     start: c => { if(c.hard) c.title = L("적을 막으세요! (하드)"); c.daggersDead = 0; c.daggers = c.hard ? 4 : 2;
         for(var i = 0; i < c.daggers; i++){ var d = U.dagger.spawn(Team.crux, (24 + (i % 2)*4)*8, (c.hard ? 4 + i*3 : CY + 2*i)*8); d.health = 1; d.apply(SE.disarmed, 1e7); } },
      tick: c => {
         var b = T(c.br[0], c.br[1]).build;
@@ -1034,11 +1215,11 @@ var MISSIONS = [
 
     // ---- 0.11 stages (user 2026-11-04) ----
     // beam nodes join only in straight lines; hard: an insulating (plastanium) wall with one gap the beam must go through
-    {id: "beam", title: "빔 노드를 연결하세요!", sandbox: true, themes: ["erekir-carbon", "erekir-yellow", "erekir-arkyic"], allow: ["beam-node"],
+    {id: "beam", title: L("빔 노드를 연결하세요!"), sandbox: true, themes: ["erekir-carbon", "erekir-yellow", "erekir-arkyic"], allow: ["beam-node"],
      plan: (c, r) => {
         c.shape = "rect"; c.src = [9, c.hard ? 4 : 5]; c.dst = [W - 6, c.hard ? H - 5 : H - 7]; c.px = 20; c.gapY = c.hard ? 11 : -1;
         c.keep = [[c.src[0] - 1, c.src[1] - 1, c.src[0] + 1, c.src[1] + 1], [c.dst[0] - 1, c.dst[1] - 1, c.dst[0] + 2, c.dst[1] + 2]];
-        if(c.hard) c.title = "빔 노드를 연결하세요! (하드)";
+        if(c.hard) c.title = L("빔 노드를 연결하세요! (하드)");
      },
      place: (c, r) => {
         T(c.src[0], c.src[1]).setBlock(B.powerSource, Team.sharded); protect(c, c.src[0], c.src[1]);
@@ -1050,23 +1231,23 @@ var MISSIONS = [
         return a != null && b != null && a.power != null && b.power != null && a.power.graph == b.power.graph; }},
 
     // a turbine condenser exactly over the 3x3 steam vent; then (chained) its water into the tank (user 2026-11-04)
-    {id: "turbine", title: "증기 터빈을 올리세요!", sandbox: true, themes: ["erekir-carbon"], allow: ["turbine-condenser"],
-     plan: (c, r) => turbinePlan(c, "증기 터빈을 올리세요! (하드)"),
+    {id: "turbine", title: L("증기 터빈을 올리세요!"), sandbox: true, themes: ["erekir-carbon"], allow: ["turbine-condenser"],
+     plan: (c, r) => turbinePlan(c, L("증기 터빈을 올리세요! (하드)")),
      place: (c, r) => turbinePlace(c, false),
      start: c => {},
      check: c => c.vents.every(v => { var t = T(v[0], v[1]); return t != null && t.build != null && t.build.block == B.turbineCondenser && t.build.tile.x == v[0] && t.build.tile.y == v[1]; })},
 
-    {id: "turbine-water", title: "물탱크를 채우세요!", chain: true, sandbox: true, themes: ["erekir-carbon"], allow: ["reinforced-conduit"],
-     plan: (c, r) => turbinePlan(c, "물탱크를 채우세요! (하드)"),   // practice only: the turbines are given
+    {id: "turbine-water", title: L("물탱크를 채우세요!"), chain: true, sandbox: true, themes: ["erekir-carbon"], allow: ["reinforced-conduit"],
+     plan: (c, r) => turbinePlan(c, L("물탱크를 채우세요! (하드)")),   // practice only: the turbines are given
      place: (c, r) => turbinePlace(c, true),
-     start: c => { if(c.hard) c.title = "물탱크를 채우세요! (하드)"; },
+     start: c => { if(c.hard) c.title = L("물탱크를 채우세요! (하드)"); },
      check: c => { var t = T(c.tank[0], c.tank[1]); return t != null && t.build != null && t.build.liquids != null && t.build.liquids.get(Packages.mindustry.content.Liquids.water) > 0.01; }},
 
     // an Elude hovers over deep water; cross the river to the marked square. hard: a wider river with posts in it
-    {id: "elude", title: "용암을 건너세요!", sandbox: true, themes: ["erekir-carbon", "erekir-yellow", "erekir-arkyic"],
+    {id: "elude", title: L("용암을 건너세요!"), sandbox: true, themes: ["erekir-carbon", "erekir-yellow", "erekir-arkyic"],
      plan: (c, r) => { c.shape = "rect"; c.rx0 = 14; c.rx1 = c.hard ? 25 : 20; c.tx = W - 4; c.ty = c.hard ? 4 : CY;
         c.keep = [[c.tx - 2, c.ty - 2, c.tx + 2, c.ty + 2], [c.rx0, 1, c.rx1, H - 2]];
-        if(c.hard) c.title = "용암을 건너세요! (하드)"; },
+        if(c.hard) c.title = L("용암을 건너세요! (하드)"); },
      place: (c, r) => {
         for(var x = c.tx - 1; x <= c.tx + 1; x++) for(var y = c.ty - 1; y <= c.ty + 1; y++) T(x, y).setFloor(markFloor());
         for(var rx = c.rx0; rx <= c.rx1; rx++) for(var ry = 1; ry <= H - 2; ry++){ var t = T(rx, ry); if(t.build == null && t.block() != B.air) t.setAir(); t.setFloor(B.slag); }   // molten slag (user 2026-11-04: lava, not a river); the Elude hovers over it
@@ -1078,10 +1259,10 @@ var MISSIONS = [
      check: c => { var u = Vars.player.unit(); return u != null && u.type != U.block && u.within(c.tx*8, c.ty*8, 12); }},
 
     // write the same text as the message block beside it (user 2026-11-04)
-    {id: "memo", title: "메모를 똑같이 쓰세요!", sandbox: true, themes: ["factory"],
+    {id: "memo", title: L("메모를 똑같이 쓰세요!"), sandbox: true, themes: ["factory"],
      plan: (c, r) => { // short lowercase words, a new one each time (user 2026-11-04)
         c.text = c.hard ? memoWord() + " " + memoWord() : memoWord(); c.a = [16, CY + 3]; c.b = [18, CY + 3]; c.keep = [[c.a[0] - 1, c.a[1] - 1, c.b[0] + 1, c.b[1] + 1]];
-        if(c.hard) c.title = "메모를 똑같이 쓰세요! (하드)"; },
+        if(c.hard) c.title = L("메모를 똑같이 쓰세요! (하드)"); },
      place: (c, r) => {
         T(c.a[0], c.a[1]).setBlock(B.message, Team.sharded); var a = T(c.a[0], c.a[1]).build; if(a != null){ a.message.setLength(0); a.message.append(c.text); }
         T(c.b[0], c.b[1]).setBlock(B.message, Team.sharded);
@@ -1093,11 +1274,11 @@ var MISSIONS = [
         return c.hard ? s == c.text : s.toLowerCase() == c.text; }},
 
     // draw the same picture on the empty canvas (user 2026-11-04)
-    {id: "canvas", title: "똑같이 그리세요!", sandbox: true, themes: ["erekir-yellow", "erekir-arkyic"],
+    {id: "canvas", title: L("똑같이 그리세요!"), sandbox: true, themes: ["erekir-yellow", "erekir-arkyic"],
      plan: (c, r) => { c.a = [14, CY + 2]; c.b = [18, CY + 2]; c.keep = [[c.a[0] - 1, c.a[1] - 1, c.b[0] + 2, c.b[1] + 2]];
         // [x, y, colour index]; 0 is the blank colour
         c.pic = canvasPick(c.hard);   // a shape, colour and place picked at random each time (user 2026-11-04)
-        if(c.hard) c.title = "똑같이 그리세요! (하드)"; },
+        if(c.hard) c.title = L("똑같이 그리세요! (하드)"); },
      place: (c, r) => {
         T(c.a[0], c.a[1]).setBlock(B.canvas, Team.sharded); T(c.b[0], c.b[1]).setBlock(B.canvas, Team.sharded);
         protect(c, c.a[0], c.a[1]); protect(c, c.b[0], c.b[1]);
@@ -1109,17 +1290,17 @@ var MISSIONS = [
      check: c => { var b = T(c.b[0], c.b[1]).build; if(b == null || b.data == null) return false; return shapeKey(canvasCells(b)) == shapeKey(c.pic); }},
 
     // fog of war on: build a radar by the power, then (chained) find the hidden box(es) it shows (user 2026-11-04)
-    {id: "radar", title: "레이더를 세우세요!", sandbox: true, themes: ["erekir-carbon", "erekir-arkyic"], allow: ["radar"],
-     plan: (c, r) => radarPlan(c, "레이더를 세우세요! (하드)"),
+    {id: "radar", title: L("레이더를 세우세요!"), sandbox: true, themes: ["erekir-carbon", "erekir-arkyic"], allow: ["radar"],
+     plan: (c, r) => radarPlan(c, L("레이더를 세우세요! (하드)")),
      place: (c, r) => radarPlace(c, false),
      start: c => fogOn(),
      leave: c => { var nm = runList != null && idx >= 0 && idx < runList.length ? MISSIONS[runList[idx]] : null; if(mode == "practice" || nm == null || nm.id != "radar-find") fogOff(); },
      check: c => teamBuilds(b => b.block == B.radar && b.efficiency > 0).length > 0},
 
-    {id: "radar-find", title: "숨은 상자를 찾으세요!", chain: true, sandbox: true, themes: ["erekir-carbon", "erekir-arkyic"],
-     plan: (c, r) => radarPlan(c, "숨은 상자를 찾으세요! (하드)"),   // practice only: the radar is given
+    {id: "radar-find", title: L("숨은 상자를 찾으세요!"), chain: true, sandbox: true, themes: ["erekir-carbon", "erekir-arkyic"],
+     plan: (c, r) => radarPlan(c, L("숨은 상자를 찾으세요! (하드)")),   // practice only: the radar is given
      place: (c, r) => radarPlace(c, true),
-     start: c => { if(c.hard) c.title = "숨은 상자를 찾으세요! (하드)"; fogOn(); c.found = c.hidden.map(p => false);
+     start: c => { if(c.hard) c.title = L("숨은 상자를 찾으세요! (하드)"); fogOn(); c.found = c.hidden.map(p => false);
         c.hidden.forEach(p => { var t = T(p[0], p[1]); if(t.build != null || t.block() != B.air) t.setAir(); t.setBlock(B.container, Team.crux); }); },
      tick: c => {
         teamBuilds(b => b.block == B.radar).forEach(b => { try{ if(b.progress < 1) b.progress = 1; }catch(e){} });   // the radar sees its full reach at once
@@ -1132,8 +1313,8 @@ var MISSIONS = [
     // ---- 0.10 Erekir stages (user 2026-11-04): ride an Evoke (Erekir core unit: repair beam, carries a 2x2 block) ----
     // 1) repair a broken beryllium wall (beam boosted to clear fast), 2) chained: carry that wall into the gap of a fake defence line.
     // normal: the large wall in both, hard: the small one. Large: within 1 tile of the gap is fine; small: exactly the gap.
-    {id: "repair", title: "블럭을 수리하세요!", sandbox: true, armed: true, themes: ["erekir-carbon", "erekir-yellow", "erekir-arkyic"],
-     plan: (c, r) => erekirPlan(c, r, "블럭을 수리하세요! (하드)"),
+    {id: "repair", title: L("블럭을 수리하세요!"), sandbox: true, armed: true, themes: ["erekir-carbon", "erekir-yellow", "erekir-arkyic"],
+     plan: (c, r) => erekirPlan(c, r, L("블럭을 수리하세요! (하드)")),
      place: (c, r) => erekirPlace(c, r, 0.12),
      start: c => mountPlayer(c, U.evoke, false),
      tick: c => {
@@ -1155,10 +1336,10 @@ var MISSIONS = [
      leave: c => { var nm = runList != null && idx >= 0 && idx < runList.length ? MISSIONS[runList[idx]] : null; if(mode == "practice" || nm == null || nm.id != "wall-place") unmount(c); },
      check: c => { var t = T(c.wp[0], c.wp[1]), b = t == null ? null : t.build; return b != null && b.block == c.wallBlock && b.health >= b.maxHealth - 0.5; }},
 
-    {id: "wall-place", title: "방어선을 채우세요!", chain: true, sandbox: true, themes: ["erekir-carbon", "erekir-yellow", "erekir-arkyic"],
-     plan: (c, r) => erekirPlan(c, r, "방어선을 채우세요! (하드)"),   // practice only: a room of its own with the wall already mended
+    {id: "wall-place", title: L("방어선을 채우세요!"), chain: true, sandbox: true, themes: ["erekir-carbon", "erekir-yellow", "erekir-arkyic"],
+     plan: (c, r) => erekirPlan(c, r, L("방어선을 채우세요! (하드)")),   // practice only: a room of its own with the wall already mended
      place: (c, r) => erekirPlace(c, r, 1),
-     start: c => { if(c.hard) c.title = "방어선을 채우세요! (하드)"; if(c.mount == null || !c.mount.isAdded() || Vars.player.unit() != c.mount) mountPlayer(c, U.evoke, false); },
+     start: c => { if(c.hard) c.title = L("방어선을 채우세요! (하드)"); if(c.mount == null || !c.mount.isAdded() || Vars.player.unit() != c.mount) mountPlayer(c, U.evoke, false); },
      tick: c => { keepMount(c); noBuild(); },
      leave: c => unmount(c),
      check: c => {
@@ -1171,12 +1352,12 @@ var MISSIONS = [
      }},
 
     // just before the crawlers (user 2026-11-04): send a broken Flare to a working repair point by command, without riding it
-    {id: "flare", title: "플레어를 수리받게 하세요!", sandbox: true, themes: ["grass", "spore", "snow"],
+    {id: "flare", title: L("플레어를 수리받게 하세요!"), sandbox: true, themes: ["grass", "spore", "snow"],
      plan: (c, r) => {
         c.rp = [ri(r, W - 9, W - 6), ri(r, 4, H - 6)];
         c.spawns = c.hard ? [[10, 3], [12, CY], [10, H - 4]] : [[ri(r, 10, 13), ri(r, 3, H - 4)]];
         c.keep = [[c.rp[0] - 2, c.rp[1] - 2, c.rp[0] + 2, c.rp[1] + 2]].concat(c.spawns.map(p => [p[0] - 1, p[1] - 1, p[0] + 1, p[1] + 1]));
-        if(c.hard) c.title = "플레어를 수리받게 하세요! (하드)";
+        if(c.hard) c.title = L("플레어를 수리받게 하세요! (하드)");
      },
      place: (c, r) => {
         T(c.rp[0], c.rp[1]).setBlock(B.repairPoint, Team.sharded); T(c.rp[0] + 1, c.rp[1]).setBlock(B.powerSource, Team.sharded);   // powered and working
@@ -1194,17 +1375,17 @@ var MISSIONS = [
         var f0 = u, back = c.lastOwn;
         if(back != null && back.isAdded() && back.team == Team.sharded && c.flares.indexOf(back) < 0) Vars.player.unit(back); else Vars.player.clearUnit();
         try{ f0.resetController(); }catch(e){}
-        Vars.ui.showInfoToast("플레어는 직접 탈 수 없어요. 명령으로 보내세요!", 1.5);
+        Vars.ui.showInfoToast(L("플레어는 직접 탈 수 없어요. 명령으로 보내세요!"), 1.5);
      },
      check: c => c.flares.every(f => f.isAdded() && f.health >= f.maxHealth - 0.5)},
 
     // ride a Mega (no building or breaking) and carry a Dagger (hard: a battery) over the wall to the marked square (user 2026-11-03)
-    {id: "transport", title: "대거를 수송하세요!", sandbox: true, themes: ["grass", "spore"],
+    {id: "transport", title: L("대거를 수송하세요!"), sandbox: true, themes: ["grass", "spore"],
      plan: (c, r) => {
         c.shape = "rect"; c.cx = 9; c.cy = ri(r, 4, H - 5); c.wx = ri(r, 16, 20);
         c.tx = W - 5; c.ty = ri(r, 4, H - 5);
         c.keep = [[c.cx - 1, c.cy - 1, c.cx + 1, c.cy + 1], [c.tx - 2, c.ty - 2, c.tx + 2, c.ty + 2]];
-        if(c.hard) c.title = "배터리를 수송하세요! (하드)";
+        if(c.hard) c.title = L("배터리를 수송하세요! (하드)");
      },
      place: (c, r) => {
         for(var x = c.tx - 1; x <= c.tx + 1; x++) for(var y = c.ty - 1; y <= c.ty + 1; y++) T(x, y).setFloor(markFloor());
@@ -1339,11 +1520,11 @@ function startRun(m, stage, hard){
             }));
             // StringMap.of resolves to ObjectMap.of on Android, so fill the map by hand (0.13.15)
             var mapTags = new StringMap();
-            mapTags.put("name", "MINDRUN" + (mode == "hard" ? " 하드" : mode == "practice" ? " 연습" : ""));
+            mapTags.put("name", "MINDRUN" + (mode == "hard" ? L(" 하드") : mode == "practice" ? L(" 연습") : ""));
             Vars.state.map = new MapC(mapTags);
             Vars.state.rules = rules;
             Vars.logic.play();
-        }catch(e){ Vars.ui.showInfo("맵 만들기 실패: " + e); endRun("load_failed"); }
+        }catch(e){ Vars.ui.showInfo(L("맵 만들기 실패: ") + e); endRun("load_failed"); }
     }));
 }
 
@@ -1367,7 +1548,7 @@ function nextMission(){
         setAllowed(m.allow);
         if(!chained) buildRoom(m, c);
         m.start(c);
-    }catch(e){ logErr("stage " + e); Vars.ui.showInfo("단계 만들기 실패: " + e); endRun("load_failed"); return; }
+    }catch(e){ logErr("stage " + e); Vars.ui.showInfo(L("단계 만들기 실패: ") + e); endRun("load_failed"); return; }
     done = false; nextAt = 0; elapsed = 0; started = false; lastNano = Number(java.lang.System.nanoTime());
     Vars.ui.announce(c.title, 1.5);
 }
@@ -1382,8 +1563,8 @@ function clear(status){
         var pb = data.practice[key], nb = status == "done" && (pb == null || t < pb);
         pCache = null;
         if(nb){ data.practice[key] = Math.round(t*1000)/1000; try{ wr(DIR + "/mindrun-best.json", data); }catch(e){} }
-        Vars.ui.showInfoToast("성공! " + sec(t) + (nb ? "  최고 기록!" : pb != null ? "  (최고 " + sec(pb) + ")" : ""), 1.0);
-    }else Vars.ui.showInfoToast((status == "skipped" ? "건너뜀 +" + SKIP_PENALTY + "초 " : "성공! ") + sec(t), 1.0);
+        Vars.ui.showInfoToast(L("성공! ") + sec(t) + (nb ? L("  최고 기록!") : pb != null ? L("  (최고 ") + sec(pb) + ")" : ""), 1.0);
+    }else Vars.ui.showInfoToast((status == "skipped" ? L("건너뜀 +") + SKIP_PENALTY + L("초 ") : L("성공! ")) + sec(t), 1.0);
     nextAt = Date.now() + NEXT_DELAY_MS;
 }
 
@@ -1406,20 +1587,20 @@ function endRun(status){
     if(status == "timeout"){ timeoutDialog(); return; }
     if(status != "finished") return;
     // 45 lines ran off the screen (user 2026-11-05): the splits go in two columns, the total below them
-    var lines = splits.map((x, i) => (i + 1) + ". " + x.title + "  " + (x.status == "skipped" ? "건너뜀 " : "") + sec(x.s)), half = Math.ceil(lines.length/2);
+    var lines = splits.map((x, i) => (i + 1) + ". " + x.title + "  " + (x.status == "skipped" ? L("건너뜀 ") : "") + sec(x.s)), half = Math.ceil(lines.length/2);
     var colA = lines.slice(0, half).join("\n"), colB = lines.slice(half).join("\n");
-    var txt = "총 " + sec(tot) + (newBest ? "  [accent]최고 기록![]" : best != null ? "  (최고 " + sec(best.total) + ")" : "");
-    if(unlock) txt += "\n[accent]하드모드가 열렸어요![]";
-    else if(mode == "normal" && !data.hard_unlocked) txt += "\n하드모드: 노말을 건너뛰기 없이 깨면 열려요";
+    var txt = L("총 ") + sec(tot) + (newBest ? L("  [accent]최고 기록![]") : best != null ? L("  (최고 ") + sec(best.total) + ")" : "");
+    if(unlock) txt += L("\n[accent]하드모드가 열렸어요![]");
+    else if(mode == "normal" && !data.hard_unlocked) txt += L("\n하드모드: 노말을 건너뛰기 없이 깨면 열려요");
     // cancel / again, and a hard button once hard is open after a normal run (user 2026-11-03)
-    var again = mode, Icon = Packages.mindustry.gen.Icon, d = new Packages.mindustry.ui.dialogs.BaseDialog("MINDRUN " + (mode == "hard" ? "하드 " : "") + "완료");
+    var again = mode, Icon = Packages.mindustry.gen.Icon, d = new Packages.mindustry.ui.dialogs.BaseDialog("MINDRUN " + (mode == "hard" ? L("하드 ") : "") + L("완료"));
     d.cont.pane(cons(p => { p.table(cons(t => { t.top(); t.add(colA).top().left().padRight(30); t.add(colB).top().left(); })); })).maxHeight(resultsH()); d.cont.row();
     d.cont.add(txt).center().padTop(8); d.cont.row();
     d.hidden(run(() => { musicHold = false; }));   // closing the results stops the music (a new run turns it back on)
     d.buttons.defaults().size(200, 56).pad(4);
-    d.buttons.button("취소", Icon.cancel, run(() => d.hide()));
-    d.buttons.button("한 판 더", Icon.refresh, run(() => { d.hide(); startRun(again); }));
-    if(mode == "normal" && data.hard_unlocked) d.buttons.button("하드모드 도전", Icon.warning, run(() => { d.hide(); startRun("hard"); }));
+    d.buttons.button(L("취소"), Icon.cancel, run(() => d.hide()));
+    d.buttons.button(L("한 판 더"), Icon.refresh, run(() => { d.hide(); startRun(again); }));
+    if(mode == "normal" && data.hard_unlocked) d.buttons.button(L("하드모드 도전"), Icon.warning, run(() => { d.hide(); startRun("hard"); }));
     d.show();
 }
 
@@ -1436,13 +1617,13 @@ function practiceExtra(){
 // the clock in the top-left status box (the wave box, empty with waves off) via rules.mission, which overrides its text (user 2026-11-03)
 var missionOk = false;
 function hudText(){
-    if(!active || pending || mission == null) return active ? "MINDRUN 준비 중..." : "";
+    if(!active || pending || mission == null) return active ? L("MINDRUN 준비 중...") : "";
     var t = done ? splits[splits.length - 1].s : elapsed, hard = isHard();
-    var head = "[accent]" + (mode == "practice" ? "연습 " : hard ? "하드 " : "") + (idx + 1) + "/" + runList.length + "[] " + ctx.title.replace(" (하드)", "");
+    var head = "[accent]" + (mode == "practice" ? L("연습 ") : hard ? L("하드 ") : "") + (idx + 1) + "/" + runList.length + "[] " + ctx.title.replace(L(" (하드)"), "");
     // "현재: x" and "최고기록: y" on lines of their own, no 초 (user 2026-11-03)
-    var tail = mode == "practice" ? (function(){ var pk = pbest()[mission.id + (hard ? "-hard" : "")]; return "[lightgray]최고기록: " + (pk != null ? fixed(pk, 3) : "-") + "[]"; })()
-        : "[lightgray]총: " + fixed(total() + (done ? 0 : t), 3) + "[]" + (LIMIT[mode] != null ? "\n" + (LIMIT[mode] - total() - (done ? 0 : t) < 10 ? "[scarlet]" : "[lightgray]") + "남은 시간: " + fixed(Math.max(0, LIMIT[mode] - total() - (done ? 0 : t)), 3) + "[]" : "");
-    var ex = practiceExtra().trim(); return head + "\n[white]현재: " + fixed(t, 3) + "[]\n" + tail + (ex ? "\n" + ex : "");
+    var tail = mode == "practice" ? (function(){ var pk = pbest()[mission.id + (hard ? "-hard" : "")]; return L("[lightgray]최고기록: ") + (pk != null ? fixed(pk, 3) : "-") + "[]"; })()
+        : L("[lightgray]총: ") + fixed(total() + (done ? 0 : t), 3) + "[]" + (LIMIT[mode] != null ? "\n" + (LIMIT[mode] - total() - (done ? 0 : t) < 10 ? "[scarlet]" : "[lightgray]") + L("남은 시간: ") + fixed(Math.max(0, LIMIT[mode] - total() - (done ? 0 : t)), 3) + "[]" : "");
+    var ex = practiceExtra().trim(); return head + L("\n[white]현재: ") + fixed(t, 3) + "[]\n" + tail + (ex ? "\n" + ex : "");
 }
 var pCache = null;
 function pbest(){ if(pCache == null) pCache = bestData().practice || {}; return pCache; }
@@ -1454,27 +1635,27 @@ function hudMission(){
     }catch(e){ missionOk = false; logErr("hud mission " + e); }
 }
 function timeoutDialog(){
-    var again = mode, Icon = Packages.mindustry.gen.Icon, d = new Packages.mindustry.ui.dialogs.BaseDialog("MINDRUN " + (mode == "hard" ? "하드 " : "") + "시간 초과");
-    d.cont.add("[scarlet]시간 초과![]\n\n" + splits.length + "/" + runList.length + "단계까지 깼어요\n제한 " + LIMIT[mode] + "초").center(); d.cont.row();
+    var again = mode, Icon = Packages.mindustry.gen.Icon, d = new Packages.mindustry.ui.dialogs.BaseDialog("MINDRUN " + (mode == "hard" ? L("하드 ") : "") + L("시간 초과"));
+    d.cont.add(L("[scarlet]시간 초과![]\n\n") + splits.length + "/" + runList.length + L("단계까지 깼어요\n제한 ") + LIMIT[mode] + L("초")).center(); d.cont.row();
     d.hidden(run(() => { musicHold = false; }));
     d.buttons.defaults().size(200, 56).pad(4);
-    d.buttons.button("취소", Icon.cancel, run(() => d.hide()));
-    d.buttons.button("한 판 더", Icon.refresh, run(() => { d.hide(); startRun(again); }));
+    d.buttons.button(L("취소"), Icon.cancel, run(() => d.hide()));
+    d.buttons.button(L("한 판 더"), Icon.refresh, run(() => { d.hide(); startRun(again); }));
     d.show();
 }
 function lineText(){
     if(!active) return "";
-    if(pending || mission == null) return "[MINDRUN" + (mode == "hard" ? " 하드" : mode == "practice" ? " 연습" : "") + "] 준비 중...";
+    if(pending || mission == null) return "[MINDRUN" + (mode == "hard" ? L(" 하드") : mode == "practice" ? L(" 연습") : "") + L("] 준비 중...");
     if(mode == "practice"){
         var pt = done ? splits[splits.length - 1].s : elapsed, pk = pbest()[mission.id + (isHard() ? "-hard" : "")];
-        return "[MINDRUN 연습 " + (idx + 1) + "/" + runList.length + "] " + ctx.title + "   " + sec(pt) + (pk != null ? "   (최고 " + sec(pk) + ")" : "") + practiceExtra();
+        return L("[MINDRUN 연습 ") + (idx + 1) + "/" + runList.length + "] " + ctx.title + "   " + sec(pt) + (pk != null ? L("   (최고 ") + sec(pk) + ")" : "") + practiceExtra();
     }
-    var head = "[MINDRUN " + (mode == "hard" ? "하드 " : "") + (idx + 1) + "/" + runList.length + "] " + ctx.title;
+    var head = "[MINDRUN " + (mode == "hard" ? L("하드 ") : "") + (idx + 1) + "/" + runList.length + "] " + ctx.title;
     var t = done ? splits[splits.length - 1].s : elapsed, extra = "";
     if(mission.id == "mine" && ctx.mined != null) extra = "   " + ctx.items.map(it => itemName(it) + " " + Math.min(1, ctx.mined[it] || 0) + "/1").join("  ");
     if(mission.id == "crawler" && ctx.spawns.length > 1) extra = "   " + ctx.dead + "/" + ctx.spawns.length;
     if(mission.id == "daggers") extra = "   " + ctx.daggersDead + "/" + ctx.daggers;
-    return head + "   " + sec(t) + "   (총 " + sec(total() + (done ? 0 : t)) + ")" + extra;
+    return head + "   " + sec(t) + L("   (총 ") + sec(total() + (done ? 0 : t)) + ")" + extra;
 }
 
 // ---- online ranking (user 2026-11-04): a Google Sheet behind an Apps Script web app (WORDLE/mindrun-ranking/Code.gs) ----
@@ -1492,30 +1673,30 @@ function sheetSign(d){ var s = d.name + "|" + d.mode + "|" + fixed(d.total, 3) +
 function sheetGet(params, done){
     // every callback is guarded: an exception on the main thread here crashed the whole game when loading failed (user 2026-11-05)
     var safe = (o, err) => { try{ done(o, err); }catch(x){ logErr("ranking callback " + x); } };
-    if(SHEET_URL == ""){ safe(null, "랭킹 주소가 아직 설정되지 않았어요"); return; }
+    if(SHEET_URL == ""){ safe(null, L("랭킹 주소가 아직 설정되지 않았어요")); return; }
     var post = f => { try{ Packages.arc.Core.app.post(run(() => { try{ f(); }catch(x){ logErr("ranking post " + x); } })); }catch(x){ logErr("ranking post " + x); } };
     var req = null;
     try{
         var q = Object.keys(params).map(k => k + "=" + java.net.URLEncoder.encode(String(params[k]), "UTF-8")).join("&");
         req = Packages.arc.util.Http.get(SHEET_URL + "?" + q);
-    }catch(e){ logErr("ranking request " + e); safe(null, "요청을 만들지 못했어요"); return; }
+    }catch(e){ logErr("ranking request " + e); safe(null, L("요청을 만들지 못했어요")); return; }
     try{ req.timeout(15000); }catch(e){ logErr("ranking timeout " + e); }   // a missing method on some builds must not stop the request
     try{
         req.error(cons(e => { var m = "error"; try{ m = String(e); }catch(x){} post(() => safe(null, m)); }));
         req.submit(res => { var txt = null; try{ txt = String(res.getResultAsString()); }catch(x){} post(() => {
             var o = null; try{ o = JSON.parse(txt); }catch(x){}
-            if(o == null || typeof o != "object") safe(null, "응답을 읽지 못했어요"); else safe(o, null); }); });
-    }catch(e){ logErr("ranking send " + e); safe(null, "요청을 보내지 못했어요"); }
+            if(o == null || typeof o != "object") safe(null, L("응답을 읽지 못했어요")); else safe(o, null); }); });
+    }catch(e){ logErr("ranking send " + e); safe(null, L("요청을 보내지 못했어요")); }
 }
 // a short reason instead of the whole exception and URL (it ran off the screen, user 2026-11-04)
 // no regex here: Rhino's regex engine crashed the game on some exception texts (user 2026-11-05 crash report)
 function shortErr(e){
-    var t = ""; try{ t = String(e); }catch(x){ return "오류"; }
+    var t = ""; try{ t = String(e); }catch(x){ return L("오류"); }
     var code = null, i = t.indexOf("HTTP");
     if(i >= 0){ var j = i + 4; while(j < t.length && (t.charAt(j) == " " || t.charAt(j) == ":")) j++; var c = t.substring(j, j + 3); if(c.length == 3 && !isNaN(Number(c))) code = c; }
-    if(code == "403") return "접근 거부(403): 웹앱 액세스를 '모든 사용자'로";
+    if(code == "403") return L("접근 거부(403): 웹앱 액세스를 '모든 사용자'로");
     if(code != null) return "HTTP " + code;
-    if(t.indexOf("Timeout") >= 0 || t.indexOf("timed out") >= 0) return "응답 시간 초과";
+    if(t.indexOf("Timeout") >= 0 || t.indexOf("timed out") >= 0) return L("응답 시간 초과");
     return t.length > 60 ? t.substring(0, 60) + "..." : t;
 }
 function sheetSubmit(tot){
@@ -1524,22 +1705,22 @@ function sheetSubmit(tot){
     d.check = sheetSign(d);
     sheetGet({action: "submit", data: JSON.stringify(d)}, (o, err) => {
         if(err != null || !o.ok) logErr("ranking submit " + (err || o.err)); if(err != null) err = shortErr(err);
-        Vars.ui.showInfoToast(err == null && o.ok ? "랭킹에 등록했어요 (" + d.name + ")" : "랭킹 등록 실패: " + (err || o.err), 3);
+        Vars.ui.showInfoToast(err == null && o.ok ? L("랭킹에 등록했어요 (") + d.name + ")" : L("랭킹 등록 실패: ") + (err || o.err), 3);
     });
 }
 function rankingDialog(){
-    var d = new Packages.mindustry.ui.dialogs.BaseDialog("MINDRUN 랭킹"), me = playerName(), cols = {};
+    var d = new Packages.mindustry.ui.dialogs.BaseDialog(L("MINDRUN 랭킹")), me = playerName(), cols = {};
     d.cont.table(cons(t => {
         ["normal", "hard"].forEach(md => {
-            t.table(cons(col => { col.top(); col.defaults().left().pad(2); col.add(md == "normal" ? "[accent]NORMAL[]" : "[scarlet]HARD[]").padBottom(6); col.row(); cols[md] = col.add("불러오는 중...").wrap().width(320).get(); })).top().width(340).pad(10);
+            t.table(cons(col => { col.top(); col.defaults().left().pad(2); col.add(md == "normal" ? "[accent]NORMAL[]" : "[scarlet]HARD[]").padBottom(6); col.row(); cols[md] = col.add(L("불러오는 중...")).wrap().width(320).get(); })).top().width(340).pad(10);
         });
     }));
-    d.cont.row(); d.cont.add("[lightgray]이름: " + me + "  (설정의 플레이어 이름)[]").padTop(8);
+    d.cont.row(); d.cont.add(L("[lightgray]이름: ") + me + L("  (설정의 플레이어 이름)[]")).padTop(8);
     d.addCloseButton(); d.show();
     ["normal", "hard"].forEach(md => sheetGet({action: "top", mode: md, course: courseId(), n: 10}, (o, err) => {
         var lbl = cols[md]; if(lbl == null) return;
-        if(err != null || !o.ok || o.top == null){ if(err != null) logErr("ranking top " + err); lbl.setText("불러오지 못했어요\n" + (err != null ? shortErr(err) : String(o.err || "빈 응답"))); return; }
-        if(o.top.length == 0){ lbl.setText("아직 기록이 없어요"); return; }
+        if(err != null || !o.ok || o.top == null){ if(err != null) logErr("ranking top " + err); lbl.setText(L("불러오지 못했어요\n") + (err != null ? shortErr(err) : String(o.err || L("빈 응답")))); return; }
+        if(o.top.length == 0){ lbl.setText(L("아직 기록이 없어요")); return; }
         lbl.setText(o.top.map((r, i) => (r.name == me ? "[accent]" : "") + (i + 1) + ". " + r.name + "  " + fixed(Number(r.total), 3) + (r.name == me ? "[]" : "")).join("\n"));
     }));
 }
@@ -1548,13 +1729,13 @@ function rankingDialog(){
 function modeDialog(){
     var Icon = Packages.mindustry.gen.Icon, d = new Packages.mindustry.ui.dialogs.BaseDialog("MINDRUN"), data = bestData();
     d.cont.defaults().size(320, 64).pad(6);
-    d.cont.button("NORMAL" + (data.normal ? "   (최고 " + sec(data.normal.total) + ")" : ""), Icon.play, run(() => { d.hide(); startRun("normal"); })); d.cont.row();
-    d.cont.button("HARD" + (data.hard_unlocked ? (data.hard ? "   (최고 " + sec(data.hard.total) + ")" : "") : "   [잠김]"), Icon.warning, run(() => {
-        if(!data.hard_unlocked){ Vars.ui.showInfo("하드모드는 노말을 건너뛰기 없이 깨면 열려요 (제한 " + LIMIT.normal + "초).\n노말 최고: " + (data.normal ? sec(data.normal.total) : "없음")); return; }
+    d.cont.button("NORMAL" + (data.normal ? L("   (최고 ") + sec(data.normal.total) + ")" : ""), Icon.play, run(() => { d.hide(); startRun("normal"); })); d.cont.row();
+    d.cont.button("HARD" + (data.hard_unlocked ? (data.hard ? L("   (최고 ") + sec(data.hard.total) + ")" : "") : L("   [잠김]")), Icon.warning, run(() => {
+        if(!data.hard_unlocked){ Vars.ui.showInfo(L("하드모드는 노말을 건너뛰기 없이 깨면 열려요 (제한 ") + LIMIT.normal + L("초).\n노말 최고: ") + (data.normal ? sec(data.normal.total) : L("없음"))); return; }
         d.hide(); startRun("hard");
     })); d.cont.row();
     d.cont.button("PRACTICE", Icon.book, run(() => { d.hide(); practiceDialog(); })); d.cont.row();
-    d.cont.button("랭킹", Icon.list, run(() => rankingDialog()));
+    d.cont.button(L("랭킹"), Icon.list, run(() => rankingDialog()));
     d.addCloseButton();
     d.show();
 }
@@ -1565,8 +1746,8 @@ function practiceDialog(){
         MISSIONS.forEach((m, i) => {
             t.add((i + 1) + ". " + m.title).left().width(300);
             var bn = pd[m.id], bh = pd[m.id + "-hard"];
-            t.button("노말" + (bn != null ? " " + fixed(bn, 3) : ""), run(() => { d.hide(); startRun("practice", i, false); })).size(150, 48);
-            t.button("하드" + (bh != null ? " " + fixed(bh, 3) : ""), run(() => { d.hide(); startRun("practice", i, true); })).size(150, 48);
+            t.button(L("노말") + (bn != null ? " " + fixed(bn, 3) : ""), run(() => { d.hide(); startRun("practice", i, false); })).size(150, 48);
+            t.button(L("하드") + (bh != null ? " " + fixed(bh, 3) : ""), run(() => { d.hide(); startRun("practice", i, true); })).size(150, 48);
             t.row();
         });
     })).grow();
@@ -1610,18 +1791,18 @@ function buildUi(){
                 c.table(cons(t => {
                     if(mode == "practice"){   // previous / next stage (user 2026-11-03)
                         t.add(lineText()).colspan(3).padBottom(4); t.row();
-                        t.button("이전 단계", Icon.left, run(() => { Vars.ui.paused.hide(); practiceGo(-1); })).size(200, 55).pad(4);
-                        t.button("다시", Icon.refresh, run(() => { Vars.ui.paused.hide(); practiceGo(0); })).size(200, 55).pad(4);
-                        t.button("다음 단계", Icon.right, run(() => { Vars.ui.paused.hide(); practiceGo(1); })).size(200, 55).pad(4); t.row();
-                        t.button("하드 " + (practiceHard ? "끄기" : "켜기"), Icon.warning, run(() => { Vars.ui.paused.hide(); practiceHard = !practiceHard; practiceGo(0); })).size(200, 55).pad(4);
-                        t.button("그만하기", Icon.cancel, run(() => { Vars.ui.paused.hide(); endRun("quit"); })).size(200, 55).pad(4);
+                        t.button(L("이전 단계"), Icon.left, run(() => { Vars.ui.paused.hide(); practiceGo(-1); })).size(200, 55).pad(4);
+                        t.button(L("다시"), Icon.refresh, run(() => { Vars.ui.paused.hide(); practiceGo(0); })).size(200, 55).pad(4);
+                        t.button(L("다음 단계"), Icon.right, run(() => { Vars.ui.paused.hide(); practiceGo(1); })).size(200, 55).pad(4); t.row();
+                        t.button(L("하드 ") + (practiceHard ? L("끄기") : L("켜기")), Icon.warning, run(() => { Vars.ui.paused.hide(); practiceHard = !practiceHard; practiceGo(0); })).size(200, 55).pad(4);
+                        t.button(L("그만하기"), Icon.cancel, run(() => { Vars.ui.paused.hide(); endRun("quit"); })).size(200, 55).pad(4);
                         return;
                     }
                     t.add(lineText()).colspan(3).padBottom(4); t.row();
                     // restart the whole run from stage 1 (user 2026-11-05)
-                    t.button("처음부터 다시", Icon.refresh, run(() => { Vars.ui.paused.hide(); var m = mode; endRun("restart"); startRun(m); })).size(200, 55).pad(4);
-                    t.button("건너뛰기 (+" + SKIP_PENALTY + "초)", Icon.right, run(() => { Vars.ui.paused.hide(); if(!pending) clear("skipped"); })).size(200, 55).pad(4);
-                    t.button("그만하기", Icon.cancel, run(() => { Vars.ui.paused.hide(); endRun("quit"); })).size(200, 55).pad(4);
+                    t.button(L("처음부터 다시"), Icon.refresh, run(() => { Vars.ui.paused.hide(); var m = mode; endRun("restart"); startRun(m); })).size(200, 55).pad(4);
+                    t.button(L("건너뛰기 (+") + SKIP_PENALTY + L("초)"), Icon.right, run(() => { Vars.ui.paused.hide(); if(!pending) clear("skipped"); })).size(200, 55).pad(4);
+                    t.button(L("그만하기"), Icon.cancel, run(() => { Vars.ui.paused.hide(); endRun("quit"); })).size(200, 55).pad(4);
                 })).colspan(2).padTop(80);   // below the dialog's own Quit button (user 2026-11-03)
             }catch(x){ print("mindrun ui paused " + x); }
         }));
