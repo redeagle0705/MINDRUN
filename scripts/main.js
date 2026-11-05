@@ -23,7 +23,7 @@ function wBase(){
     }catch(e){ print("mindrun migrate " + e); }
     return base;
 }
-var BASE = wBase(), VERSION = "mindustry-speedrun/0.13.20";
+var BASE = wBase(), VERSION = "mindustry-speedrun/0.13.21";
 var DIR = BASE + "/runtime", LOGS = BASE + "/logs/mindrun";
 // 0.9 (user 2026-11-03): a run fails when its time runs out. The user's own clears were normal 47.892 s and hard 96.214 s; about 15 s on top.
 var LIMIT = {normal: 120, hard: 165};   // normal 120 s, hard 165 s (user 2026-11-04, 45 stages)   // 0.13 (user 2026-11-04): for 45 stages until timed again; was normal 90 s, hard 125 s   // normal 90 s, hard 125 s (user 2026-11-04)   // 0.10: three more stages (repair, wall-place, flare), about +15 s normal and +20 s hard until the user measures again
@@ -1372,6 +1372,7 @@ function clear(status){
 
 function total(){ var s = 0; splits.forEach(x => s += x.s); return s; }
 
+function resultsH(){ try{ return Math.max(200, Packages.arc.Core.graphics.getHeight()/Packages.arc.scene.ui.layout.Scl.scl(1) - 230); }catch(e){ return 500; } }
 function endRun(status){
     if(!active) return;
     active = false; pending = false; musicHold = true;
@@ -1387,13 +1388,16 @@ function endRun(status){
     if(clean) sheetSubmit(tot);   // the online ranking (user 2026-11-04)
     if(status == "timeout"){ timeoutDialog(); return; }
     if(status != "finished") return;
-    var txt = splits.map((x, i) => (i + 1) + ". " + x.title + "  " + (x.status == "skipped" ? "건너뜀 " : "") + sec(x.s)).join("\n");
-    txt += "\n\n총 " + sec(tot) + (newBest ? "  [accent]최고 기록![]" : best != null ? "  (최고 " + sec(best.total) + ")" : "");
+    // 45 lines ran off the screen (user 2026-11-05): the splits go in two columns, the total below them
+    var lines = splits.map((x, i) => (i + 1) + ". " + x.title + "  " + (x.status == "skipped" ? "건너뜀 " : "") + sec(x.s)), half = Math.ceil(lines.length/2);
+    var colA = lines.slice(0, half).join("\n"), colB = lines.slice(half).join("\n");
+    var txt = "총 " + sec(tot) + (newBest ? "  [accent]최고 기록![]" : best != null ? "  (최고 " + sec(best.total) + ")" : "");
     if(unlock) txt += "\n[accent]하드모드가 열렸어요![]";
     else if(mode == "normal" && !data.hard_unlocked) txt += "\n하드모드: 노말을 건너뛰기 없이 깨면 열려요";
     // cancel / again, and a hard button once hard is open after a normal run (user 2026-11-03)
     var again = mode, Icon = Packages.mindustry.gen.Icon, d = new Packages.mindustry.ui.dialogs.BaseDialog("MINDRUN " + (mode == "hard" ? "하드 " : "") + "완료");
-    d.cont.add(txt).center(); d.cont.row();
+    d.cont.pane(cons(p => { p.table(cons(t => { t.top(); t.add(colA).top().left().padRight(30); t.add(colB).top().left(); })); })).maxHeight(resultsH()); d.cont.row();
+    d.cont.add(txt).center().padTop(8); d.cont.row();
     d.hidden(run(() => { musicHold = false; }));   // closing the results stops the music (a new run turns it back on)
     d.buttons.defaults().size(200, 56).pad(4);
     d.buttons.button("취소", Icon.cancel, run(() => d.hide()));
