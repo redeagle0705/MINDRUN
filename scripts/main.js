@@ -23,7 +23,7 @@ function wBase(){
     }catch(e){ print("mindrun migrate " + e); }
     return base;
 }
-var BASE = wBase(), VERSION = "mindustry-speedrun/0.13.22";
+var BASE = wBase(), VERSION = "mindustry-speedrun/0.13.23";
 var DIR = BASE + "/runtime", LOGS = BASE + "/logs/mindrun";
 // 0.9 (user 2026-11-03): a run fails when its time runs out. The user's own clears were normal 47.892 s and hard 96.214 s; about 15 s on top.
 var LIMIT = {normal: 120, hard: 165};   // normal 120 s, hard 165 s (user 2026-11-04, 45 stages)   // 0.13 (user 2026-11-04): for 45 stages until timed again; was normal 90 s, hard 125 s   // normal 90 s, hard 125 s (user 2026-11-04)   // 0.10: three more stages (repair, wall-place, flare), about +15 s normal and +20 s hard until the user measures again
@@ -466,7 +466,7 @@ var MISSIONS = [
 
     // chain (user 2026-11-03): mine copper -> build a Duo -> stop the daggers, with the copper you mined. Building costs a quarter here.
     // hard asked copper, lead, sand: sand floors are playerUnmineable in v146, so scrap stands in for sand
-    {id: "mine", title: "구리 10개를 캐세요!", sandbox: false, cost: 0.25, themes: ["cave", "snow"],
+    {id: "mine", title: "구리를 캐세요!", sandbox: false, cost: 0.25, themes: ["cave", "snow"],
      plan: (c, r) => {
         c.items = c.hard ? ["copper", "lead", "scrap"] : ["copper"]; c.patches = [];
         var xs = c.hard ? [ri(r, 10, 12), ri(r, 16, 19), ri(r, 23, 26)] : [ri(r, 12, 18)];
@@ -481,7 +481,7 @@ var MISSIONS = [
      check: c => { var core = Vars.player.team().core(), u = Vars.player.unit(); if(core == null) return false;
         c.mined = {};
         return c.items.map(it => { var item = Vars.content.item(it), held = (u != null && u.stack != null && u.stack.item == item) ? Number(u.stack.amount) : 0;
-            c.mined[it] = Math.max(0, Number(core.items.get(item)) - c.core0[it] + held); return c.mined[it] >= 10; }).every(x => x); }},
+            c.mined[it] = Math.max(0, Number(core.items.get(item)) - c.core0[it] + held); return c.mined[it] >= 1; }).every(x => x); }},   // one of each (user 2026-11-05)
 
     {id: "build-duo", title: "듀오를 건설하세요!", chain: true, sandbox: false, cost: 0.25, allow: ["duo"], themes: ["cave", "snow"],
      plan: (c, r) => { c.keep = []; }, place: (c, r) => {},   // practice only: a room of its own
@@ -948,15 +948,17 @@ var MISSIONS = [
 
     // ride an Evoke and mine beryllium out of the wall
     {id: "beryllium", title: "베릴륨을 캐세요!", sandbox: false, themes: ["erekir-carbon", "erekir-yellow", "erekir-arkyic"],
-     plan: (c, r) => { c.shape = "rect"; c.need = c.hard ? 20 : 10; c.ore = [22, CY + 3];
-        c.keep = [[c.ore[0] - 2, c.ore[1] - 2, c.ore[0] + 4, c.ore[1] + 4]]; if(c.hard) c.title = "베릴륨을 캐세요! (하드)"; },
-     place: (c, r) => { for(var x = c.ore[0]; x < c.ore[0] + 3; x++) for(var y = c.ore[1]; y < c.ore[1] + 3; y++){ var t = T(x, y); t.setBlock(B.beryllicStoneWall); t.setOverlay(B.wallOreBeryllium); } },
-     start: c => { mountPlayer(c, U.evoke, false); var core = Vars.player.team().core(); c.core0 = core == null ? 0 : Number(core.items.get(I.beryllium)); c.mined = 0; },
+     // 0.13.23 (user 2026-11-05): one of each is enough; hard adds graphite (a second vein lower down)
+     plan: (c, r) => { c.shape = "rect"; c.need = 1; c.veins = [[22, CY + 3, "beryllium"]].concat(c.hard ? [[22, CY - 6, "graphite"]] : []);
+        c.keep = c.veins.map(v => [v[0] - 2, v[1] - 2, v[0] + 4, v[1] + 4]); if(c.hard) c.title = "베릴륨, 흑연을 캐세요! (하드)"; },
+     place: (c, r) => c.veins.forEach(v => { for(var x = v[0]; x < v[0] + 3; x++) for(var y = v[1]; y < v[1] + 3; y++){ var t = T(x, y); t.setBlock(B.beryllicStoneWall); t.setOverlay(Vars.content.block("ore-wall-" + v[2])); } }),
+     start: c => { mountPlayer(c, U.evoke, false); var core = Vars.player.team().core(); c.core0 = {}; c.mined = {};
+        c.veins.forEach(v => c.core0[v[2]] = core == null ? 0 : Number(core.items.get(Vars.content.item(v[2])))); },
      tick: c => { keepMount(c); noBuild(); },
      leave: c => unmount(c),
      check: c => { var core = Vars.player.team().core(), u = Vars.player.unit(); if(core == null) return false;
-        var held = (u != null && u.stack != null && u.stack.item == I.beryllium) ? Number(u.stack.amount) : 0;
-        c.mined = Math.max(0, Number(core.items.get(I.beryllium)) - c.core0 + held); return c.mined >= c.need; }},
+        return c.veins.map(v => { var item = Vars.content.item(v[2]), held = (u != null && u.stack != null && u.stack.item == item) ? Number(u.stack.amount) : 0;
+            c.mined[v[2]] = Math.max(0, Number(core.items.get(item)) - c.core0[v[2]] + held); return c.mined[v[2]] >= c.need; }).every(x => x); }},
 
     // a Nova jumps (boosts, Shift) over walls; hard: three walls
     {id: "nova", title: "노바로 벽을 넘으세요!", sandbox: true, themes: ["grass", "spore", "snow"],
@@ -1422,10 +1424,10 @@ function endRun(status){
 }
 
 function practiceExtra(){
-    if(mission.id == "mine" && ctx.mined != null) return "   " + ctx.items.map(it => itemName(it) + " " + Math.min(10, ctx.mined[it] || 0) + "/10").join("  ");
+    if(mission.id == "mine" && ctx.mined != null) return "   " + ctx.items.map(it => itemName(it) + " " + Math.min(1, ctx.mined[it] || 0) + "/1").join("  ");
     if(mission.id == "crawler" && ctx.spawns.length > 1) return "   " + ctx.dead + "/" + ctx.spawns.length;
     if(mission.id == "daggers" || mission.id == "breach-defend") return "   " + ctx.daggersDead + "/" + ctx.daggers;
-    if(mission.id == "beryllium" && ctx.mined != null) return "   " + Math.min(ctx.need, ctx.mined) + "/" + ctx.need;
+    if(mission.id == "beryllium" && ctx.mined != null) return "   " + ctx.veins.map(v => itemName(v[2]) + " " + Math.min(1, ctx.mined[v[2]] || 0) + "/1").join("  ");
     if(mission.id == "force" && ctx.hits != null) return "   " + Math.min(ctx.need, ctx.hits) + "/" + ctx.need;
     if(mission.id == "tsunami" && ctx.out != null) return "   " + ctx.out + "/" + ctx.fires.length;
     if(mission.id == "flare" && ctx.flares != null && ctx.flares.length > 1) return "   " + ctx.flares.filter(f => f.isAdded() && f.health >= f.maxHealth - 0.5).length + "/" + ctx.flares.length;
@@ -1469,7 +1471,7 @@ function lineText(){
     }
     var head = "[MINDRUN " + (mode == "hard" ? "하드 " : "") + (idx + 1) + "/" + runList.length + "] " + ctx.title;
     var t = done ? splits[splits.length - 1].s : elapsed, extra = "";
-    if(mission.id == "mine" && ctx.mined != null) extra = "   " + ctx.items.map(it => itemName(it) + " " + Math.min(10, ctx.mined[it] || 0) + "/10").join("  ");
+    if(mission.id == "mine" && ctx.mined != null) extra = "   " + ctx.items.map(it => itemName(it) + " " + Math.min(1, ctx.mined[it] || 0) + "/1").join("  ");
     if(mission.id == "crawler" && ctx.spawns.length > 1) extra = "   " + ctx.dead + "/" + ctx.spawns.length;
     if(mission.id == "daggers") extra = "   " + ctx.daggersDead + "/" + ctx.daggers;
     return head + "   " + sec(t) + "   (총 " + sec(total() + (done ? 0 : t)) + ")" + extra;
