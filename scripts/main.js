@@ -23,7 +23,7 @@ function wBase(){
     }catch(e){ print("mindrun migrate " + e); }
     return base;
 }
-var BASE = wBase(), VERSION = "mindustry-speedrun/0.13.18";
+var BASE = wBase(), VERSION = "mindustry-speedrun/0.13.19";
 var DIR = BASE + "/runtime", LOGS = BASE + "/logs/mindrun";
 // 0.9 (user 2026-11-03): a run fails when its time runs out. The user's own clears were normal 47.892 s and hard 96.214 s; about 15 s on top.
 var LIMIT = {normal: 120, hard: 165};   // normal 120 s, hard 165 s (user 2026-11-04, 45 stages)   // 0.13 (user 2026-11-04): for 45 stages until timed again; was normal 90 s, hard 125 s   // normal 90 s, hard 125 s (user 2026-11-04)   // 0.10: three more stages (repair, wall-place, flare), about +15 s normal and +20 s hard until the user measures again
@@ -1593,7 +1593,9 @@ function buildUi(){
                         t.button("그만하기", Icon.cancel, run(() => { Vars.ui.paused.hide(); endRun("quit"); })).size(200, 55).pad(4);
                         return;
                     }
-                    t.add(lineText()).colspan(2).padBottom(4); t.row();
+                    t.add(lineText()).colspan(3).padBottom(4); t.row();
+                    // restart the whole run from stage 1 (user 2026-11-05)
+                    t.button("처음부터 다시", Icon.refresh, run(() => { Vars.ui.paused.hide(); var m = mode; endRun("restart"); startRun(m); })).size(200, 55).pad(4);
                     t.button("건너뛰기 (+" + SKIP_PENALTY + "초)", Icon.right, run(() => { Vars.ui.paused.hide(); if(!pending) clear("skipped"); })).size(200, 55).pad(4);
                     t.button("그만하기", Icon.cancel, run(() => { Vars.ui.paused.hide(); endRun("quit"); })).size(200, 55).pad(4);
                 })).colspan(2).padTop(80);   // below the dialog's own Quit button (user 2026-11-03)
