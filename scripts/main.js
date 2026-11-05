@@ -1,7 +1,7 @@
 // MINDRUN 0.4. 0.1 (user 2026-11-03: "simple missions solved fast, back to back, as a speedrun challenge", a separate mod beside MINDLE).
 // A run is every mission once, each on its own tiny room. A mission ends the moment its condition is met (no holding);
 // the conveyor mission ends the moment the belts are connected, items or not (user 2026-11-03).
-// Time is real time from the first playing frame of each mission, counted only while playing (not loading, not paused), shown to 0.001 s. Skip = +SKIP_PENALTY s.
+// Time is real time from the first playing frame of each mission, counted while playing (not loading; pause counts in runs, not in practice), shown to 0.001 s. Skip = +SKIP_PENALTY s.
 // 0.3 (user 2026-11-03): normal or hard; hard opens when a normal run is cleared under UNLOCK_S s without skips.
 // 0.4: one map, 10 stages in a fixed order, each painted in place (see missions).
 // Start: main menu > Play > Join Game > [MINDRUN]. Skip / quit in the ESC menu.
@@ -23,7 +23,7 @@ function wBase(){
     }catch(e){ print("mindrun migrate " + e); }
     return base;
 }
-var BASE = wBase(), VERSION = "mindustry-speedrun/0.13.15";
+var BASE = wBase(), VERSION = "mindustry-speedrun/0.13.16";
 var DIR = BASE + "/runtime", LOGS = BASE + "/logs/mindrun";
 // 0.9 (user 2026-11-03): a run fails when its time runs out. The user's own clears were normal 47.892 s and hard 96.214 s; about 15 s on top.
 var LIMIT = {normal: 120, hard: 165};   // normal 120 s, hard 165 s (user 2026-11-04, 45 stages)   // 0.13 (user 2026-11-04): for 45 stages until timed again; was normal 90 s, hard 125 s   // normal 90 s, hard 125 s (user 2026-11-04)   // 0.10: three more stages (repair, wall-place, flare), about +15 s normal and +20 s hard until the user measures again
@@ -1616,7 +1616,8 @@ Events.run(Trigger.update, () => {
             if(!playerReady()) return;
             started = true; elapsed = 0; lastNano = now; return;
         }
-        if(!Vars.state.isPaused()) elapsed += (now - lastNano)/1e9;   // real time, but not while paused
+        // real time; in a run it keeps going while paused (players planned builds under pause, user 2026-11-05), practice still stops
+        if(mode != "practice" || !Vars.state.isPaused()) elapsed += (now - lastNano)/1e9;
         lastNano = now;
         protectTick(ctx);
         // no shooting where a stage does not need it (user 2026-11-04): only the daggers (through a Duo) and the crawlers (their blast is their weapon) need it
