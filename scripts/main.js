@@ -23,7 +23,7 @@ function wBase(){
     }catch(e){ print("mindrun migrate " + e); }
     return base;
 }
-var BASE = wBase(), VERSION = "mindustry-speedrun/0.13.19";
+var BASE = wBase(), VERSION = "mindustry-speedrun/0.13.20";
 var DIR = BASE + "/runtime", LOGS = BASE + "/logs/mindrun";
 // 0.9 (user 2026-11-03): a run fails when its time runs out. The user's own clears were normal 47.892 s and hard 96.214 s; about 15 s on top.
 var LIMIT = {normal: 120, hard: 165};   // normal 120 s, hard 165 s (user 2026-11-04, 45 stages)   // 0.13 (user 2026-11-04): for 45 stages until timed again; was normal 90 s, hard 125 s   // normal 90 s, hard 125 s (user 2026-11-04)   // 0.10: three more stages (repair, wall-place, flare), about +15 s normal and +20 s hard until the user measures again
@@ -888,14 +888,17 @@ var MISSIONS = [
      // 0.13.2: the fires had burnt out before the clock started, so the stage cleared at once (user 2026-11-04): a fire that went out by itself comes back
      tick: c => { var Fs = Packages.mindustry.entities.Fires, n = 0;
         var pu = Vars.player.unit(); if(pu != null && pu.type != U.block) pu.apply(SE.disarmed, 5);   // the player's own gun stays off
-        if(c.hard) teamBuilds(b => b.block == B.tsunami).forEach(b => { if(!b.isControlled()){ b.logicControlTime = 30; b.logicShooting = false; } });   // hard: fires only with the player in it
+        var tsu = teamBuilds(b => b.block == B.tsunami);
+        if(c.hard) tsu.forEach(b => { if(!b.isControlled()){ b.logicControlTime = 30; b.logicShooting = false; } });   // hard: fires only with the player in it
+        // 0.13.20: no fire counts as put out until a Tsunami stands (a frame hitch still cleared the stage at once, user 2026-11-05)
+        var canDouse = tsu.length > 0;
         c.fires.forEach(f => { var k = f[0] + "," + f[1]; if(c.doused[k]){ n++; return; }
             var tile = T(f[0], f[1]), fr = Fs.get(tile); if(fr == null){ Fs.create(tile); c.ft[k] = null; return; }
             var t = Number(fr.time), was = c.ft[k];
-            if(was != null && t - was > 12*Packages.arc.util.Time.delta){ fr.remove(); c.doused[k] = true; n++; return; }   // doused
+            if(canDouse && was != null && t - was > 12*Packages.arc.util.Time.delta){ fr.remove(); c.doused[k] = true; n++; return; }   // doused
             fr.time = 0; c.ft[k] = 0; });   // the field (Rhino reads fr.time as the number, user 2026-11-04)
         c.out = n; },
-     check: c => c.out >= c.fires.length},
+     check: c => c.out >= c.fires.length && teamBuilds(b => b.block == B.tsunami).length > 0},
 
     // ride a Poly and fly into the tier-3 maker (multiplicative reconstructor); hard: the other factories stand beside it
     {id: "poly", title: "제작기에 들어가세요!", sandbox: true, themes: ["factory"],
